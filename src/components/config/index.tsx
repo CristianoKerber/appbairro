@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-export default function Configuracao() {
+export  function Configuracao() {
  return (
    <View className='flex-1 items-center justify-center'>
     <Text className='text-2xl'>Tela Configuração</Text>
