@@ -1,4 +1,7 @@
 // App.tsx ou HomeScreen.tsx
+import { RootStackParamList } from "../types/navigation"
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React from "react";
 import {
   ScrollView,
@@ -42,19 +45,27 @@ const CircularProgress = ({ percentage }: { percentage: number }) => {
   );
 };
 
-const App = () => {
+type DashboardNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "Dashboard"
+>;
+const Dashboard = () => {
+  const navigation = useNavigation<DashboardNavigationProp>();
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
         <Icon name="leaf" size={30} color="#2E7D32" />
-        <Text style={styles.title}>BAIRRO SUSTENTÁVEL</Text>
-        <Icon name="home" size={30} color="#555" />
-        <Text style={styles.user}>Carlos</Text>
+        <Text style={styles.title}>RECiclo</Text>
       </View>
 
+      <View>
+        <Icon name="home" size={30} color="#555" />
+        <Text style={styles.user}>{/*home*/}</Text>
+      </View>
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={[styles.button, { backgroundColor: "#00BCD4" }]}
+          onPress={() => navigation.navigate("Coleta")}
         >
           <Icon name="delete" size={24} color="#fff" />
           <Text style={styles.buttonText}>Solicitar{"\n"}Coleta</Text>
@@ -183,4 +194,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default App;
+export default Dashboard;

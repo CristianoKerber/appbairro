@@ -1,15 +1,19 @@
-import Dashboard from "@/app";
-import { NavigationContainer } from "@react-navigation/native"; // <- Aqui está a correção
+import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React from "react";
 
-const Stack = createNativeStackNavigator();
+import Dashboard from "@/app";
+import { RootStackParamList } from "@/types/navigation";
+import SolicitaColeta from "../solicitaColeta";
 
-export function App() {
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Dashboard">
-        <Stack.Screen name="app" component={Dashboard} />
+        <Stack.Screen name="Dashboard" component={Dashboard} />
+        <Stack.Screen name="Coleta" component={SolicitaColeta} />
       </Stack.Navigator>
     </NavigationContainer>
   );

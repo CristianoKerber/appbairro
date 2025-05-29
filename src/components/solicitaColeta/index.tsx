@@ -1,24 +1,32 @@
 // SolicitaColeta.tsx
 
-import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
+import React, { useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function SolicitaColeta() {
-  const [endereco, setEndereco] = useState('Rua dos Recicláveis, 456');
-  const [data, setData] = useState('20/05/2024');
-  const [residuosSelecionados, setResiduosSelecionados] = useState<string[]>([]);
+  const [endereco, setEndereco] = useState("Rua dos Recicláveis, 456");
+  const [data, setData] = useState("20/05/2024");
+  const [residuosSelecionados, setResiduosSelecionados] = useState<string[]>(
+    []
+  );
 
   const tiposResiduos = [
-    { nome: 'Papel', icon: 'file-alt', cor: '#2aa7b7' },
-    { nome: 'Plástico', icon: 'bottle-water', cor: '#4caf50' },
-    { nome: 'Vidro', icon: 'wine-bottle', cor: '#4caf50' },
-    { nome: 'Metal', icon: 'can', cor: '#7a9e4c' },
+    { nome: "Papel", icon: "file-alt", cor: "#2aa7b7" },
+    { nome: "Plástico", icon: "bottle-water", cor: "#4caf50" },
+    { nome: "Vidro", icon: "wine-bottle", cor: "#4caf50" },
+    { nome: "Metal", icon: "can", cor: "#7a9e4c" },
   ];
 
   const toggleResiduo = (nome: string) => {
     if (residuosSelecionados.includes(nome)) {
-      setResiduosSelecionados(residuosSelecionados.filter(r => r !== nome));
+      setResiduosSelecionados(residuosSelecionados.filter((r) => r !== nome));
     } else {
       setResiduosSelecionados([...residuosSelecionados, nome]);
     }
@@ -33,7 +41,11 @@ export default function SolicitaColeta() {
       <Text style={styles.label}>Endereço</Text>
       <View style={styles.inputContainer}>
         <MaterialIcons name="location-on" size={20} color="#999" />
-        <TextInput value={endereco} onChangeText={setEndereco} style={styles.input} />
+        <TextInput
+          value={endereco}
+          onChangeText={setEndereco}
+          style={styles.input}
+        />
       </View>
 
       <Text style={styles.label}>Data de Coleta</Text>
@@ -56,7 +68,12 @@ export default function SolicitaColeta() {
             ]}
             onPress={() => toggleResiduo(item.nome)}
           >
-            <FontAwesome5 name={item.icon as any} size={16} color="#fff" style={{ marginRight: 5 }} />
+            <FontAwesome5
+              name={item.icon as any}
+              size={16}
+              color="#fff"
+              style={{ marginRight: 5 }}
+            />
             <Text style={styles.btnText}>{item.nome}</Text>
           </TouchableOpacity>
         ))}
@@ -70,13 +87,13 @@ export default function SolicitaColeta() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#fff' },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, color: '#333' },
-  label: { fontSize: 16, fontWeight: '600', marginTop: 15, marginBottom: 5 },
+  container: { flex: 1, padding: 20, backgroundColor: "#fff" },
+  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20, color: "#333" },
+  label: { fontSize: 16, fontWeight: "600", marginTop: 15, marginBottom: 5 },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f6f6f6',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f6f6f6",
     borderRadius: 10,
     paddingHorizontal: 10,
     height: 50,
@@ -85,17 +102,17 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 10,
     fontSize: 16,
-    color: '#333',
+    color: "#333",
   },
   buttonsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
     marginVertical: 10,
   },
   residuoBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderRadius: 10,
     padding: 10,
     paddingHorizontal: 15,
@@ -103,19 +120,19 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   btnText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
   },
   agendarBtn: {
     marginTop: 20,
-    backgroundColor: '#4caf50',
+    backgroundColor: "#4caf50",
     borderRadius: 12,
     paddingVertical: 15,
-    alignItems: 'center',
+    alignItems: "center",
   },
   agendarText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });
