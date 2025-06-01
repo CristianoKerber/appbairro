@@ -13,7 +13,7 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Dashboard">
         <Stack.Screen name="Dashboard" component={Dashboard} />
-        <Stack.Screen name="Coleta" component={SolicitaColeta} />
+        <Stack.Screen name="SolicitaColeta" component={SolicitaColeta} />
       </Stack.Navigator>
     </NavigationContainer>
   );

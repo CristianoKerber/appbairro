@@ -1,5 +1,4 @@
 // App.tsx ou HomeScreen.tsx
-import { RootStackParamList } from "../types/navigation"
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React from "react";
@@ -12,6 +11,7 @@ import {
 } from "react-native";
 import { Circle, G, Svg } from "react-native-svg";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import { RootStackParamList } from "../types/navigation";
 
 const CircularProgress = ({ percentage }: { percentage: number }) => {
   const radius = 40;
@@ -65,10 +65,14 @@ const Dashboard = () => {
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={[styles.button, { backgroundColor: "#00BCD4" }]}
-          onPress={() => navigation.navigate("Coleta")}
         >
           <Icon name="delete" size={24} color="#fff" />
-          <Text style={styles.buttonText}>Solicitar{"\n"}Coleta</Text>
+          <Text
+            style={styles.buttonText}
+            onPress={() => navigation.navigate("SolicitaColeta")}
+          >
+            Solicitar{"\n"}Coleta
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity

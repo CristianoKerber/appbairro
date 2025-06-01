@@ -1,6 +1,6 @@
 export type RootStackParamList = {
   Dashboard: undefined;
-  Coleta: undefined;
+  SolicitaColeta: undefined;
   Jardim: undefined;
   Configuracoes: undefined;
 };
