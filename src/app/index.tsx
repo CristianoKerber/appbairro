@@ -65,12 +65,12 @@ const Dashboard = () => {
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={[styles.button, { backgroundColor: "#00BCD4" }]}
+          onPress={() => navigation.navigate("SolicitaColeta")}
         >
           <Icon name="delete" size={24} color="#fff" />
           <Text
             style={styles.buttonText}
-            onPress={() => navigation.navigate("SolicitaColeta")}
-          >
+            >
             Solicitar{"\n"}Coleta
           </Text>
         </TouchableOpacity>
