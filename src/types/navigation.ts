@@ -4,3 +4,4 @@ export type RootStackParamList = {
   Jardim: undefined;
   Configuracoes: undefined;
 };
+

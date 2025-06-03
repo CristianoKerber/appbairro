@@ -1,6 +1,8 @@
 // SolicitaColeta.tsx
 
+import { RootStackParamList } from "@/types/navigation";
 import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import React, { useState } from "react";
 import {
   StyleSheet,
@@ -11,6 +13,9 @@ import {
 } from "react-native";
 
 export default function SolicitaColeta() {
+  
+    
+  const navigator = useNavigation<RootStackParamList>();
   const [endereco, setEndereco] = useState("Rua dos Recicláveis, 456");
   const [data, setData] = useState("20/05/2024");
   const [residuosSelecionados, setResiduosSelecionados] = useState<string[]>(
@@ -79,8 +84,12 @@ export default function SolicitaColeta() {
         ))}
       </View>
 
-      <TouchableOpacity style={styles.agendarBtn}>
+      <TouchableOpacity onPress={() => {
+        navigator.replace("Dashboard");
+        
+      }} style={styles.agendarBtn}>
         <Text style={styles.agendarText}>Agendar Coleta</Text>
+        
       </TouchableOpacity>
     </View>
   );
