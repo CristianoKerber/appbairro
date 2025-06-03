@@ -11,8 +11,9 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Dashboard">
+      <Stack.Navigator  initialRouteName="Dashboard">
         <Stack.Screen name="Dashboard" component={Dashboard} />
+        
         <Stack.Screen name="SolicitaColeta" component={SolicitaColeta} />
       </Stack.Navigator>
     </NavigationContainer>
