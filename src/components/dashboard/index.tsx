@@ -49,7 +49,6 @@ type DashboardNavigationProp = NativeStackNavigationProp<
   "Dashboard"
 >;
 const Dashboard = () => {
-  
   const navigation = useNavigation<DashboardNavigationProp>();
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -66,17 +65,12 @@ const Dashboard = () => {
         <TouchableOpacity
           style={[styles.button, { backgroundColor: "#00BCD4" }]}
           onPress={() => {
-                console.log("Solicitar Coleta");
-                navigation.replace("SolicitaColeta");
-            }}
-          
+            console.log("Solicitar Coleta");
+            navigation.replace("SolicitaColeta");
+          }}
         >
           <Icon name="delete" size={24} color="#fff" />
-          <Text
-            style={styles.buttonText}
-            >
-            Solicitar{"\n"}Coleta
-          </Text>
+          <Text style={styles.buttonText}>Solicitar{"\n"}Coleta</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
