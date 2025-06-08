@@ -1,8 +1,9 @@
 // App.tsx ou HomeScreen.tsx
-import { RootStackParamList } from "@/types/navigation";
+
+// Importações necessárias
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   Button,
   Modal,
@@ -12,10 +13,26 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Circle, G, Svg } from "react-native-svg";
+import { Circle, G, Svg } from "react-native-svg"; // Importações para o CircularProgress
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
+// --- Tipagem de Navegação (MUITO IMPORTANTE!) ---
+// Se você já tem um arquivo de tipos como "@/types/navigation", importe de lá.
+// Caso contrário, pode definir aqui para fins de teste.
+// Exemplo (ajuste conforme suas rotas reais):
+type RootStackParamList = {
+  Dashboard: undefined; // A rota Dashboard não recebe parâmetros
+  SolicitaColeta: undefined; // A rota SolicitaColeta não recebe parâmetros
+  // Adicione outras rotas do seu Stack Navigator aqui, ex:
+  // DetalhesColeta: { id: string };
+};
 
+type DashboardNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "Dashboard"
+>;
+
+// --- Componente CircularProgress ---
 const CircularProgress = ({ percentage }: { percentage: number }) => {
   const radius = 40;
   const strokeWidth = 10;
@@ -48,14 +65,10 @@ const CircularProgress = ({ percentage }: { percentage: number }) => {
   );
 };
 
-
-type DashboardNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  "Dashboard"
->;
-
+// --- Componente Principal Dashboard ---
 const Dashboard = () => {
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isInfovisible, setIsInfovisible] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false); // Para o modal de status
   const navigation = useNavigation<DashboardNavigationProp>();
 
   return (
@@ -65,17 +78,17 @@ const Dashboard = () => {
         <Text style={styles.title}>RECiclo</Text>
       </View>
 
-      <View style={styles.userInfo}> 
+      <View style={styles.userInfo}>
         <Icon name="home" size={30} color="#555" />
-        <Text style={styles.user}>Bem-vindo, Usuário!</Text> 
+        <Text style={styles.user}>Bem-vindo, Usuário!</Text>
       </View>
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={[styles.button, { backgroundColor: "#00BCD4" }]}
           onPress={() => {
-            console.log("Solicitar Coleta");
-            navigation.navigate("SolicitaColeta"); 
+            // Certifique-se que 'SolicitaColeta' está definido em RootStackParamList
+            navigation.navigate("SolicitaColeta");
           }}
         >
           <Icon name="delete" size={24} color="#fff" />
@@ -86,7 +99,7 @@ const Dashboard = () => {
 
         <TouchableOpacity
           style={[styles.button, { backgroundColor: '#C8E6C9' }]}
-          onPress={() => setIsModalVisible(true)} // Ao clicar, abre o modal
+          onPress={() => setIsModalVisible(true)} // Abre o modal de status
         >
           <Icon name="clock-outline" size={24} color="#2E7D32" />
           <Text style={[styles.buttonText, { color: '#2E7D32' }]}>
@@ -96,8 +109,7 @@ const Dashboard = () => {
 
         <TouchableOpacity
           style={[styles.button, { backgroundColor: "#2196F3" }]}
-          // Adicione a navegação ou lógica para este botão
-          onPress={() => console.log("Informações sobre Reciclagem")}
+          onPress={() => setIsInfovisible(true)} // Abre o modal de informações
         >
           <Icon name="recycle" size={24} color="#fff" />
           <Text style={styles.buttonText}>
@@ -107,7 +119,6 @@ const Dashboard = () => {
 
         <TouchableOpacity
           style={[styles.button, { backgroundColor: "#388E3C" }]}
-          // Adicione a navegação ou lógica para este botão
           onPress={() => console.log("Participar do Jardim Comunitário")}
         >
           <Icon name="sprout" size={24} color="#fff" />
@@ -117,12 +128,6 @@ const Dashboard = () => {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.statusBox}>
-        <View style={styles.statusDot} />
-        <Text style={styles.statusText}>
-          Sua coleta foi agendada para hoje às 16h.
-        </Text>
-      </View>
 
       <View style={styles.graphContainer}>
         <Text style={styles.graphTitle}>
@@ -134,6 +139,72 @@ const Dashboard = () => {
         </View>
       </View>
 
+      {/* --- MODAL DE INFORMAÇÕES SOBRE RECICLAGEM (Mais Enfeitada) --- */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isInfovisible}
+        onRequestClose={() => {
+          setIsInfovisible(false);
+          console.log('Modal de informações fechado.');
+        }}
+      >
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContentEnfeitado}>
+            <View style={styles.modalHeader}>
+              <Icon name="information-circle-outline" size={30} color="#2196F3" />
+              <Text style={styles.modalTitleEnfeitado}>Guia de Reciclagem</Text>
+            </View>
+            <ScrollView style={styles.modalScrollView}>
+              <View style={styles.modalSection}>
+                <Icon name="leaf" size={20} color="#388E3C" style={styles.sectionIcon} />
+                <Text style={styles.sectionTitle}>Por Que Reciclar?</Text>
+                <Text style={styles.modalTextEnfeitado}>
+                  Reciclar é vital para nosso planeta, pois reduz a quantidade de lixo em aterros,
+                  economiza energia, conserva recursos naturais e gera empregos.
+                </Text>
+              </View>
+
+              <View style={styles.modalSection}>
+                <Icon name="package-variant-closed" size={20} color="#00BCD4" style={styles.sectionIcon} />
+                <Text style={styles.sectionTitle}>Como Diferenciar?</Text>
+                <Text style={styles.modalTextEnfeitado}>
+                  • **Papel:** Jornais, revistas, caixas de papelão limpas. Evite papel higiênico, fotos.
+                  {"\n"}
+                  • **Plástico:** Garrafas PET, embalagens de produtos. Evite isopor em algumas regiões.
+                  {"\n"}
+                  • **Vidro:** Garrafas, potes de alimentos. Evite espelhos, louças, lâmpadas.
+                  {"\n"}
+                  • **Metal:** Latas de alumínio, panelas velhas. Evite pilhas, baterias, eletrônicos.
+                  {"\n"}
+                  • **Orgânico:** Restos de alimentos, borra de café. Evite carnes e laticínios em compostagem doméstica.
+                </Text>
+              </View>
+
+              <View style={styles.modalSection}>
+                <Icon name="check-circle-outline" size={20} color="#4CAF50" style={styles.sectionIcon} />
+                <Text style={styles.sectionTitle}>Modo de Separar</Text>
+                <Text style={styles.modalTextEnfeitado}>
+                  1. **Separe por tipo:** Tenha lixeiras para cada categoria (papel, plástico, vidro, metal, orgânico).
+                  {"\n"}
+                  2. **Limpe e Seque:** Lave embalagens plásticas e de vidro. Papel e papelão devem estar secos.
+                  {"\n"}
+                  3. **Amasse e Compacte:** Reduza o volume de latas e garrafas para economizar espaço.
+                  {"\n"}
+                  4. **Cuidado com o Vidro:** Embale vidros quebrados em jornais ou caixas para segurança.
+                  {"\n"}
+                  5. **Descarte o Orgânico Separadamente:** Nunca misture com recicláveis secos.
+                  {"\n"}
+                  6. **Ponto de Coleta:** Verifique a coleta seletiva da sua região ou leve a um PEV.
+                </Text>
+              </View>
+            </ScrollView>
+            <Button title="Entendi" onPress={() => setIsInfovisible(false)} />
+          </View>
+        </View>
+      </Modal>
+
+      {/* --- MODAL DE STATUS DA SOLICITAÇÃO (Mais Enfeitada) --- */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -144,11 +215,23 @@ const Dashboard = () => {
         }}
       >
         <View style={styles.modalBackground}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Status da Solicitação</Text>
-            <Text style={styles.modalText}>
-              exemploo
-            </Text>
+          <View style={styles.modalContentEnfeitado}>
+            <View style={styles.modalHeader}>
+              <Icon name="information-outline" size={30} color="#C8E6C9" />
+              <Text style={[styles.modalTitleEnfeitado, { color: '#2E7D32' }]}>Status da Coleta</Text>
+            </View>
+            <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+              <Icon name="truck-delivery-outline" size={50} color="#30B7B0" />
+              <Text style={[styles.modalTextEnfeitado, { fontSize: 16, marginTop: 10, fontWeight: 'bold' }]}>
+                Sua coleta está
+              </Text>
+              <Text style={[styles.modalTextEnfeitado, { fontSize: 18, fontWeight: 'bold', color: '#30B7B0' }]}>
+                Aguardando Confirmação!
+              </Text>
+              <Text style={[styles.modalTextEnfeitado, { marginTop: 10, textAlign: 'center', color: '#777' }]}>
+                Você receberá uma notificação quando a coleta for confirmada.
+              </Text>
+            </View>
             <Button title="Fechar" onPress={() => setIsModalVisible(false)} />
           </View>
         </View>
@@ -157,9 +240,10 @@ const Dashboard = () => {
   );
 };
 
+// --- Estilos ---
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1, 
+    flexGrow: 1,
     padding: 20,
     backgroundColor: "#fff",
     alignItems: "center",
@@ -173,20 +257,20 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#2E7D32",
   },
-  userInfo: { 
+  userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
   },
   user: {
     color: "#555",
-    marginLeft: 5, 
+    marginLeft: 5,
     fontSize: 16,
   },
   buttonContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10, 
+    gap: 10,
     justifyContent: "center",
     marginBottom: 20,
   },
@@ -195,11 +279,10 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 10,
     padding: 10,
-   
     justifyContent: "center",
     alignItems: "center",
     elevation: 3,
-    shadowColor: "#000", 
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
@@ -217,7 +300,7 @@ const styles = StyleSheet.create({
     padding: 10,
     marginVertical: 20,
     alignItems: "center",
-    width: '100%', 
+    width: '100%',
   },
   statusDot: {
     width: 10,
@@ -228,7 +311,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     color: "#333",
-    flex: 1, 
+    flex: 1,
   },
   graphContainer: {
     marginTop: 20,
@@ -236,9 +319,9 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   graphTitle: {
-    fontSize: 16, 
+    fontSize: 16,
     marginBottom: 10,
-    fontWeight: 'bold', 
+    fontWeight: 'bold',
     textAlign: 'center',
   },
   graphPercentage: {
@@ -252,30 +335,53 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-  modalContent: {
+  modalContentEnfeitado: {
     backgroundColor: '#fff',
     padding: 20,
-    borderRadius: 10,
+    borderRadius: 15, // Cantos mais arredondados
     alignItems: 'center',
-    elevation: 5, 
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    width: '80%', 
-    maxWidth: 400, 
+    elevation: 10, // Sombra mais forte para Android
+    shadowColor: '#000', // Sombra para iOS
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    width: '85%', // Largura um pouco maior
+    maxWidth: 450,
   },
-  modalTitle: {
-    fontSize: 18,
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  modalTitleEnfeitado: {
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginLeft: 10,
   },
-  modalText: {
-    marginBottom: 20,
-    textAlign: 'center',
+  modalScrollView: {
+    maxHeight: 300,
+    marginBottom: 15,
+    width: '100%',
+  },
+  modalSection: {
+    marginBottom: 15,
+    paddingHorizontal: 10,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+    color: '#333',
+  },
+  sectionIcon: {
+    marginRight: 5,
+  },
+  modalTextEnfeitado: {
     fontSize: 14,
+    color: '#555',
+    textAlign: 'left', 
   },
 });
 

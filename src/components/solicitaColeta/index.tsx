@@ -2,10 +2,12 @@
 
 import { RootStackParamList } from "@/types/navigation";
 import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker"; // Importe o DatePicker
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import {
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -13,6 +15,8 @@ import {
   View,
 } from "react-native";
 
+// --- Tipagem de Navegação ---
+// Mantenha esta parte como está ou importe do seu arquivo de tipos se existir
 type ColetaNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   "SolicitaColeta"
@@ -21,7 +25,8 @@ type ColetaNavigationProp = NativeStackNavigationProp<
 export default function SolicitaColeta() {
   const navigator = useNavigation<ColetaNavigationProp>();
   const [endereco, setEndereco] = useState("Rua dos Recicláveis, 456");
-  const [data, setData] = useState("20/05/2024");
+  const [dataColeta, setDataColeta] = useState(new Date()); // Armazenará a data como objeto Date
+  const [showDatePicker, setShowDatePicker] = useState(false); // Estado para controlar a visibilidade do calendário
   const [residuosSelecionados, setResiduosSelecionados] = useState<string[]>(
     []
   );
@@ -41,6 +46,36 @@ export default function SolicitaColeta() {
     }
   };
 
+  const isButtonDisabled = residuosSelecionados.length === 0;
+
+  // --- Funções para o Date Picker ---
+  const onChangeDate = (event: any, selectedDate?: Date) => {
+    const currentDate = selectedDate || dataColeta;
+    setShowDatePicker(Platform.OS === 'ios'); // No iOS, o picker fica visível por padrão, então fechamos manual
+                                            // No Android, ele fecha automaticamente
+    setDataColeta(currentDate);
+  };
+
+  const showDatepicker = () => {
+    setShowDatePicker(true);
+  };
+
+  // Formata a data para exibição (DD/MM/AAAA)
+  const formatarData = (date: Date) => {
+    return date.toLocaleDateString('pt-BR'); // Formato DD/MM/AAAA
+  };
+
+  const handleAgendarColeta = () => {
+    if (isButtonDisabled) {
+      alert("Por favor, selecione pelo menos um tipo de resíduo para agendar a coleta.");
+      return;
+    }
+    navigator.replace("Dashboard");
+    alert(
+      `Coleta agendada para ${formatarData(dataColeta)} no endereço ${endereco} com os seguintes resíduos: ${residuosSelecionados.join(", ")}. Solicitada com sucesso!`
+    );
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>
@@ -54,14 +89,34 @@ export default function SolicitaColeta() {
           value={endereco}
           onChangeText={setEndereco}
           style={styles.input}
+          placeholder="Seu endereço completo"
+          editable={false}
         />
       </View>
 
       <Text style={styles.label}>Data de Coleta</Text>
-      <View style={styles.inputContainer}>
+      {/* --- Campo de Data que Abre o Calendário --- */}
+      <TouchableOpacity onPress={showDatepicker} style={styles.inputContainer}>
         <MaterialIcons name="date-range" size={20} color="#999" />
-        <TextInput value={data} onChangeText={setData} style={styles.input} />
-      </View>
+        <TextInput
+          value={formatarData(dataColeta)} // Exibe a data formatada
+          style={styles.input}
+          editable={false} // Impede edição direta, apenas via calendário
+          placeholder="Selecione a data"
+        />
+      </TouchableOpacity>
+
+      {/* --- O DatePicker (Calendário) --- */}
+      {showDatePicker && (
+        <DateTimePicker
+          testID="dateTimePicker"
+          value={dataColeta}
+          mode="date" // Define o modo para seleção de data
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'} // 'spinner' para iOS, 'default' para Android
+          onChange={onChangeDate}
+          minimumDate={new Date()} // Impede seleção de datas passadas
+        />
+      )}
 
       <Text style={styles.label}>Tipos de Resíduos</Text>
       <View style={styles.buttonsContainer}>
@@ -72,7 +127,7 @@ export default function SolicitaColeta() {
               styles.residuoBtn,
               {
                 backgroundColor: item.cor,
-                opacity: residuosSelecionados.includes(item.nome) ? 1 : 0.5,
+                opacity: residuosSelecionados.includes(item.nome) ? 1 : 0.6,
               },
             ]}
             onPress={() => toggleResiduo(item.nome)}
@@ -89,10 +144,14 @@ export default function SolicitaColeta() {
       </View>
 
       <TouchableOpacity
-        onPress={() => {
-          navigator.replace("Dashboard");
-        }}
-        style={styles.agendarBtn}
+        onPress={handleAgendarColeta}
+        style={[
+          styles.agendarBtn,
+          {
+            backgroundColor: isButtonDisabled ? "#ccc" : "#4caf50",
+          },
+        ]}
+        disabled={isButtonDisabled}
       >
         <Text style={styles.agendarText}>Agendar Coleta</Text>
       </TouchableOpacity>
@@ -111,6 +170,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 10,
     height: 50,
+    marginBottom: 10,
   },
   input: {
     flex: 1,
@@ -138,8 +198,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   agendarBtn: {
-    marginTop: 20,
-    backgroundColor: "#4caf50",
+    marginTop: 30,
     borderRadius: 12,
     paddingVertical: 15,
     alignItems: "center",
