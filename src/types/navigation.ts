@@ -3,5 +3,5 @@ export type RootStackParamList = {
   SolicitaColeta: undefined;
   Jardim: undefined;
   Configuracoes: undefined;
+  Cadastro: undefined;
 };
-

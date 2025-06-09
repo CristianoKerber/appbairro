@@ -15,8 +15,6 @@ import {
   View,
 } from "react-native";
 
-// --- Tipagem de Navegação ---
-// Mantenha esta parte como está ou importe do seu arquivo de tipos se existir
 type ColetaNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   "SolicitaColeta"
@@ -25,8 +23,8 @@ type ColetaNavigationProp = NativeStackNavigationProp<
 export default function SolicitaColeta() {
   const navigator = useNavigation<ColetaNavigationProp>();
   const [endereco, setEndereco] = useState("Rua dos Recicláveis, 456");
-  const [dataColeta, setDataColeta] = useState(new Date()); // Armazenará a data como objeto Date
-  const [showDatePicker, setShowDatePicker] = useState(false); // Estado para controlar a visibilidade do calendário
+  const [dataColeta, setDataColeta] = useState(new Date()); 
+  const [showDatePicker, setShowDatePicker] = useState(false); 
   const [residuosSelecionados, setResiduosSelecionados] = useState<string[]>(
     []
   );
@@ -51,8 +49,7 @@ export default function SolicitaColeta() {
   // --- Funções para o Date Picker ---
   const onChangeDate = (event: any, selectedDate?: Date) => {
     const currentDate = selectedDate || dataColeta;
-    setShowDatePicker(Platform.OS === 'ios'); // No iOS, o picker fica visível por padrão, então fechamos manual
-                                            // No Android, ele fecha automaticamente
+    setShowDatePicker(Platform.OS === 'ios');
     setDataColeta(currentDate);
   };
 
@@ -60,9 +57,8 @@ export default function SolicitaColeta() {
     setShowDatePicker(true);
   };
 
-  // Formata a data para exibição (DD/MM/AAAA)
   const formatarData = (date: Date) => {
-    return date.toLocaleDateString('pt-BR'); // Formato DD/MM/AAAA
+    return date.toLocaleDateString('pt-BR'); 
   };
 
   const handleAgendarColeta = () => {
@@ -95,26 +91,24 @@ export default function SolicitaColeta() {
       </View>
 
       <Text style={styles.label}>Data de Coleta</Text>
-      {/* --- Campo de Data que Abre o Calendário --- */}
       <TouchableOpacity onPress={showDatepicker} style={styles.inputContainer}>
         <MaterialIcons name="date-range" size={20} color="#999" />
         <TextInput
-          value={formatarData(dataColeta)} // Exibe a data formatada
+          value={formatarData(dataColeta)} 
           style={styles.input}
-          editable={false} // Impede edição direta, apenas via calendário
+          editable={false}
           placeholder="Selecione a data"
         />
       </TouchableOpacity>
 
-      {/* --- O DatePicker (Calendário) --- */}
       {showDatePicker && (
         <DateTimePicker
           testID="dateTimePicker"
           value={dataColeta}
-          mode="date" // Define o modo para seleção de data
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'} // 'spinner' para iOS, 'default' para Android
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
           onChange={onChangeDate}
-          minimumDate={new Date()} // Impede seleção de datas passadas
+          minimumDate={new Date()}
         />
       )}
 

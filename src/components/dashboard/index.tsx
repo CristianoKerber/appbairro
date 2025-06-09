@@ -1,6 +1,7 @@
 // App.tsx ou HomeScreen.tsx
 
 // Importações necessárias
+import { RootStackParamList } from "@/types/navigation";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useState } from "react";
@@ -13,26 +14,15 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Circle, G, Svg } from "react-native-svg"; // Importações para o CircularProgress
+import { Circle, G, Svg } from "react-native-svg";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
-// --- Tipagem de Navegação (MUITO IMPORTANTE!) ---
-// Se você já tem um arquivo de tipos como "@/types/navigation", importe de lá.
-// Caso contrário, pode definir aqui para fins de teste.
-// Exemplo (ajuste conforme suas rotas reais):
-type RootStackParamList = {
-  Dashboard: undefined; // A rota Dashboard não recebe parâmetros
-  SolicitaColeta: undefined; // A rota SolicitaColeta não recebe parâmetros
-  // Adicione outras rotas do seu Stack Navigator aqui, ex:
-  // DetalhesColeta: { id: string };
-};
 
 type DashboardNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   "Dashboard"
 >;
 
-// --- Componente CircularProgress ---
 const CircularProgress = ({ percentage }: { percentage: number }) => {
   const radius = 40;
   const strokeWidth = 10;
@@ -65,10 +55,9 @@ const CircularProgress = ({ percentage }: { percentage: number }) => {
   );
 };
 
-// --- Componente Principal Dashboard ---
 const Dashboard = () => {
   const [isInfovisible, setIsInfovisible] = useState(false);
-  const [isModalVisible, setIsModalVisible] = useState(false); // Para o modal de status
+  const [isModalVisible, setIsModalVisible] = useState(false); 
   const navigation = useNavigation<DashboardNavigationProp>();
 
   return (
@@ -87,7 +76,6 @@ const Dashboard = () => {
         <TouchableOpacity
           style={[styles.button, { backgroundColor: "#00BCD4" }]}
           onPress={() => {
-            // Certifique-se que 'SolicitaColeta' está definido em RootStackParamList
             navigation.navigate("SolicitaColeta");
           }}
         >
@@ -99,7 +87,7 @@ const Dashboard = () => {
 
         <TouchableOpacity
           style={[styles.button, { backgroundColor: '#C8E6C9' }]}
-          onPress={() => setIsModalVisible(true)} // Abre o modal de status
+          onPress={() => setIsModalVisible(true)} 
         >
           <Icon name="clock-outline" size={24} color="#2E7D32" />
           <Text style={[styles.buttonText, { color: '#2E7D32' }]}>
@@ -109,7 +97,7 @@ const Dashboard = () => {
 
         <TouchableOpacity
           style={[styles.button, { backgroundColor: "#2196F3" }]}
-          onPress={() => setIsInfovisible(true)} // Abre o modal de informações
+          onPress={() => setIsInfovisible(true)} 
         >
           <Icon name="recycle" size={24} color="#fff" />
           <Text style={styles.buttonText}>
@@ -139,7 +127,6 @@ const Dashboard = () => {
         </View>
       </View>
 
-      {/* --- MODAL DE INFORMAÇÕES SOBRE RECICLAGEM (Mais Enfeitada) --- */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -204,7 +191,6 @@ const Dashboard = () => {
         </View>
       </Modal>
 
-      {/* --- MODAL DE STATUS DA SOLICITAÇÃO (Mais Enfeitada) --- */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -240,7 +226,6 @@ const Dashboard = () => {
   );
 };
 
-// --- Estilos ---
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
