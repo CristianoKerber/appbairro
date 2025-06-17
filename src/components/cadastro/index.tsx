@@ -6,18 +6,16 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Keyboard,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
-// A tipagem CadastroScreenNavigationProp agora está correta para "CadastroScreen"
 type CadastroScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   "CadastroScreen"
@@ -121,7 +119,7 @@ export default function CadastroScreen() {
 
   const handleCadastro = () => {
     console.log("--- handleCadastro iniciado ---");
-    setErrorMessage(""); // Limpar mensagem de erro antes de validar
+    setErrorMessage("");
 
     if (
       !username ||
@@ -188,9 +186,7 @@ export default function CadastroScreen() {
 
     console.log("Dados para cadastro:", userData);
 
-    Alert.alert("Sucesso!", "Cadastro realizado com sucesso!", [
-      { text: "OK", onPress: () => navigation.replace("Dashboard") }, // Navega para o Dashboard
-    ]);
+    navigation.replace("Dashboard")
 
     // Limpar campos após o cadastro (opcional)
     setUsername("");
@@ -389,7 +385,7 @@ export default function CadastroScreen() {
 
       <TouchableOpacity
         style={styles.loginLink}
-        onPress={() => navigation.replace("LoginScreen")} // Usando "LoginScreen" conforme solicitado
+        onPress={() => navigation.replace("LoginScreen")} 
       >
         <Text style={styles.loginText}>Já tem uma conta? Faça Login</Text>
       </TouchableOpacity>

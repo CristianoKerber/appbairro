@@ -5,15 +5,14 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import {
-    Alert, // Para permitir rolagem em telas menores
-    KeyboardAvoidingView, // Para ajustar a tela quando o teclado aparecer
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  KeyboardAvoidingView, // Para ajustar a tela quando o teclado aparecer
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
@@ -34,9 +33,7 @@ export default function LoginScreen() {
     setErrorMessage(""); 
 
     if (username === "user" && password === "123") {
-      Alert.alert("Login Efetuado", "Bem-vindo ao Dashboard!", [
-        { text: "OK", onPress: () => navigation.replace("Dashboard") }, 
-      ]);
+      navigation.navigate("Dashboard"); 
       setUsername("");
       setPassword("");
     } else {
