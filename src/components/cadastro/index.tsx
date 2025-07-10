@@ -260,7 +260,7 @@ export default function CadastroScreen() {
         <Icon name="phone" size={20} color="#777" style={styles.icon} />
         <TextInput
           style={styles.input}
-          placeholder="Número de Telefone (DDD) XXXXX-XXXX"
+          placeholder="Número de Telefone"
           value={formatarTelefone(phoneNumber)}
           onChangeText={(text) => setPhoneNumber(text.replace(/\D/g, ""))}
           keyboardType="phone-pad"
