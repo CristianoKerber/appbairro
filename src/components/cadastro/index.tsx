@@ -181,14 +181,12 @@ export default function CadastroScreen() {
       email,
       phoneNumber: phoneNumber.replace(/\D/g, ""),
       address: fullAddress,
-      // dateOfBirth não incluído, conforme solicitado
     };
 
     console.log("Dados para cadastro:", userData);
 
     navigation.replace("Dashboard")
 
-    // Limpar campos após o cadastro (opcional)
     setUsername("");
     setPassword("");
     setConfirmPassword("");
