@@ -1,11 +1,14 @@
 // SolicitaColeta.tsx
 
+import CollectService from "@/service/CollectService"; // Keep this import
+import CollectedItemService from "@/service/CollectedItemService";
 import { RootStackParamList } from "@/types/navigation";
 import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
-import DateTimePicker from "@react-native-community/datetimepicker"; // Importe o DatePicker
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Platform,
   StyleSheet,
@@ -23,11 +26,9 @@ type ColetaNavigationProp = NativeStackNavigationProp<
 export default function SolicitaColeta() {
   const navigator = useNavigation<ColetaNavigationProp>();
   const [endereco, setEndereco] = useState("Rua dos Recicláveis, 456");
-  const [dataColeta, setDataColeta] = useState(new Date()); 
-  const [showDatePicker, setShowDatePicker] = useState(false); 
-  const [residuosSelecionados, setResiduosSelecionados] = useState<string[]>(
-    []
-  );
+  const [dataColeta, setDataColeta] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [residuosSelecionados, setResiduosSelecionados] = useState<string[]>([]);
 
   const tiposResiduos = [
     { nome: "Papel", icon: "file-alt", cor: "#2aa7b7" },
@@ -46,10 +47,9 @@ export default function SolicitaColeta() {
 
   const isButtonDisabled = residuosSelecionados.length === 0;
 
-  // --- Funções para o Date Picker ---
   const onChangeDate = (event: any, selectedDate?: Date) => {
     const currentDate = selectedDate || dataColeta;
-    setShowDatePicker(Platform.OS === 'ios');
+    setShowDatePicker(Platform.OS === "ios");
     setDataColeta(currentDate);
   };
 
@@ -58,19 +58,63 @@ export default function SolicitaColeta() {
   };
 
   const formatarData = (date: Date) => {
-    return date.toLocaleDateString('pt-BR'); 
+    return date.toLocaleDateString("pt-BR");
   };
 
-  const handleAgendarColeta = () => {
+  const handleAgendarColeta = async () => {
     if (isButtonDisabled) {
       alert("Por favor, selecione pelo menos um tipo de resíduo para agendar a coleta.");
       return;
     }
-    navigator.replace("Dashboard");
-    alert(
-      `Coleta agendada para ${formatarData(dataColeta)} no endereço ${endereco} com os seguintes resíduos: ${residuosSelecionados.join(", ")}. Solicitada com sucesso!`
-    );
+try {
+  // 1. Criar a coleta
+  const collectPayload = {
+    Collected: false,
+    collecteDate: dataColeta.toISOString().split("T")[0],
   };
+
+  const collectResponse = await CollectService.createCollect(collectPayload);
+  const collectId = collectResponse.id;
+
+  if (!collectId) {
+    throw new Error("ID da coleta não foi retornado pelo backend.");
+  }
+
+  // 2. Criar os itens coletados vinculados à coleta criada
+  for (const nomeItem of residuosSelecionados) {
+    const collectedItemPayload = {
+      ItemName: nomeItem,
+      ItemDescription: `Resíduo do tipo ${nomeItem}`,
+      quantity: 1,
+      collectedDate: dataColeta.toISOString().split("T")[0],
+      collectId: collectId,
+    };
+
+    await CollectedItemService.createCollectedItem(collectedItemPayload);
+  }
+
+  alert(
+    `Coleta agendada para ${formatarData(dataColeta)} no endereço ${endereco} com os resíduos: ${residuosSelecionados.join(
+      ", "
+    )}.`
+  );
+  navigator.replace("Dashboard");
+} catch (error) {
+  console.error("Erro ao agendar coleta:", error);
+  alert("Erro ao agendar a coleta. Tente novamente.");
+}
+
+  };
+
+  useEffect(() => {
+    const carregarEndereco = async () => {
+      const enderecoSalvo = await AsyncStorage.getItem("userAddress");
+      if (enderecoSalvo) {
+        setEndereco(enderecoSalvo);
+      }
+    };
+    carregarEndereco();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -94,7 +138,7 @@ export default function SolicitaColeta() {
       <TouchableOpacity onPress={showDatepicker} style={styles.inputContainer}>
         <MaterialIcons name="date-range" size={20} color="#999" />
         <TextInput
-          value={formatarData(dataColeta)} 
+          value={formatarData(dataColeta)}
           style={styles.input}
           editable={false}
           placeholder="Selecione a data"
@@ -106,7 +150,7 @@ export default function SolicitaColeta() {
           testID="dateTimePicker"
           value={dataColeta}
           mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          display={Platform.OS === "ios" ? "spinner" : "default"}
           onChange={onChangeDate}
           minimumDate={new Date()}
         />

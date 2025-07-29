@@ -1,6 +1,3 @@
-// CadastroScreen.tsx
-
-import { RootStackParamList } from "@/types/navigation"; // Importa a tipagem do local correto
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useEffect, useState } from "react";
@@ -12,9 +9,12 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+
+import { RootStackParamList } from "@/types/navigation";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type CadastroScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -24,367 +24,206 @@ type CadastroScreenNavigationProp = NativeStackNavigationProp<
 export default function CadastroScreen() {
   const navigation = useNavigation<CadastroScreenNavigationProp>();
 
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [email, setEmail] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-
-  const [cep, setCep] = useState("");
-  const [rua, setRua] = useState("");
-  const [numero, setNumero] = useState("");
-  const [complemento, setComplemento] = useState("");
-  const [bairro, setBairro] = useState("");
-  const [cidade, setCidade] = useState("");
-  const [estado, setEstado] = useState("");
+  const [form, setForm] = useState({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    phoneNumber: "",
+    cep: "",
+    rua: "",
+    numero: "",
+    complemento: "",
+    bairro: "",
+    cidade: "",
+    estado: "",
+  });
 
   const [errorMessage, setErrorMessage] = useState("");
   const [loadingCep, setLoadingCep] = useState(false);
 
+  const handleChange = (field: string, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
   const buscarEnderecoPorCep = async (inputCep: string) => {
     const cleanedCep = inputCep.replace(/\D/g, "");
-
-    if (cleanedCep.length !== 8) {
-      setRua("");
-      setBairro("");
-      setCidade("");
-      setEstado("");
-      return;
-    }
+    if (cleanedCep.length !== 8) return;
 
     setLoadingCep(true);
     setErrorMessage("");
     Keyboard.dismiss();
 
     try {
-      const response = await fetch(
-        `https://viacep.com.br/ws/${cleanedCep}/json/`
-      );
-      const data = await response.json();
+      const res = await fetch(`https://viacep.com.br/ws/${cleanedCep}/json/`);
+      const data = await res.json();
 
       if (data.erro) {
-        setErrorMessage(
-          "CEP não encontrado. Por favor, verifique ou preencha manualmente."
-        );
-        setRua("");
-        setBairro("");
-        setCidade("");
-        setEstado("");
+        setErrorMessage("CEP não encontrado.");
+        handleChange("rua", "");
+        handleChange("bairro", "");
+        handleChange("cidade", "");
+        handleChange("estado", "");
       } else {
-        setRua(data.logradouro || "");
-        setBairro(data.bairro || "");
-        setCidade(data.localidade || "");
-        setEstado(data.uf || "");
-        setErrorMessage("");
+        handleChange("rua", data.logradouro || "");
+        handleChange("bairro", data.bairro || "");
+        handleChange("cidade", data.localidade || "");
+        handleChange("estado", data.uf || "");
       }
-    } catch (error) {
-      console.error("Erro ao buscar CEP:", error);
-      setErrorMessage("Erro ao buscar CEP. Verifique sua conexão.");
-      setRua("");
-      setBairro("");
-      setCidade("");
-      setEstado("");
+    } catch (err) {
+      setErrorMessage("Erro ao buscar CEP.");
     } finally {
       setLoadingCep(false);
     }
   };
 
   useEffect(() => {
-    const handler = setTimeout(() => {
-      if (cep.replace(/\D/g, "").length === 8) {
-        buscarEnderecoPorCep(cep);
+    const timer = setTimeout(() => {
+      if (form.cep.replace(/\D/g, "").length === 8) {
+        buscarEnderecoPorCep(form.cep);
       }
     }, 500);
+    return () => clearTimeout(timer);
+  }, [form.cep]);
 
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [cep]);
-
-  const formatarTelefone = (text: string) => {
-    const cleaned = text.replace(/\D/g, "");
-    let formatted = "";
-
-    if (cleaned.length > 0) {
-      formatted += `(${cleaned.substring(0, 2)}`;
-    }
-    if (cleaned.length > 2) {
-      formatted += `) ${cleaned.substring(2, 7)}`;
-    }
-    if (cleaned.length > 7) {
-      formatted += `-${cleaned.substring(7, 11)}`;
-    }
-    return formatted;
+  const formatarTelefone = (value: string) => {
+    const cleaned = value.replace(/\D/g, "");
+    return cleaned
+      .replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3")
+      .substring(0, 15);
   };
 
-  const handleCadastro = () => {
-    console.log("--- handleCadastro iniciado ---");
-    setErrorMessage("");
+  const validarCadastro = () => {
+    const {
+      username,
+      email,
+      password,
+      confirmPassword,
+      phoneNumber,
+      cep,
+      rua,
+      numero,
+      bairro,
+      cidade,
+      estado,
+    } = form;
 
     if (
-      !username ||
-      !password ||
-      !confirmPassword ||
-      !email ||
-      !phoneNumber ||
-      !cep ||
-      !rua ||
-      !numero ||
-      !bairro ||
-      !cidade ||
-      !estado
-    ) {
-      setErrorMessage(
-        "Por favor, preencha todos os campos obrigatórios, incluindo o endereço completo."
-      );
-      console.log("Validação falhou: Campos obrigatórios ausentes");
-      return;
-    }
-    if (password !== confirmPassword) {
-      setErrorMessage("As senhas não coincidem.");
-      console.log("Validação falhou: Senhas não coincidem");
-      return;
-    }
-    if (password.length < 6) {
-      setErrorMessage("A senha deve ter pelo menos 6 caracteres.");
-      console.log("Validação falhou: Senha curta");
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setErrorMessage("Por favor, insira um e-mail válido.");
-      console.log("Validação falhou: E-mail inválido");
-      return;
-    }
-    if (phoneNumber.replace(/\D/g, "").length < 10) {
-      setErrorMessage(
-        "Número de telefone inválido (mínimo 10 dígitos com DDD)."
-      );
-      console.log("Validação falhou: Telefone inválido");
-      return;
-    }
-    if (cep.replace(/\D/g, "").length !== 8) {
-      setErrorMessage("CEP inválido. Digite 8 dígitos.");
-      console.log("Validação falhou: CEP inválido");
-      return;
-    }
+      !username || !email || !password || !confirmPassword ||
+      !phoneNumber || !cep || !rua || !numero || !bairro || !cidade || !estado
+    ) return "Preencha todos os campos obrigatórios.";
 
-    console.log("Todas as validações passaram. Tentando cadastro...");
+    if (password !== confirmPassword) return "As senhas não coincidem.";
+    if (password.length < 6) return "Senha deve ter ao menos 6 caracteres.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "E-mail inválido.";
+    if (phoneNumber.replace(/\D/g, "").length < 10) return "Telefone inválido.";
+    if (cep.replace(/\D/g, "").length !== 8) return "CEP inválido.";
 
-    const fullAddress = `${rua}, ${numero}${
-      complemento ? ` - ${complemento}` : ""
-    }, ${bairro}, ${cidade} - ${estado}, CEP ${cep}`;
-
-    const userData = {
-      username,
-      password,
-      email,
-      phoneNumber: phoneNumber.replace(/\D/g, ""),
-      address: fullAddress,
-    };
-
-    console.log("Dados para cadastro:", userData);
-
-    navigation.replace("Dashboard")
-
-    setUsername("");
-    setPassword("");
-    setConfirmPassword("");
-    setEmail("");
-    setPhoneNumber("");
-    setCep("");
-    setRua("");
-    setNumero("");
-    setComplemento("");
-    setBairro("");
-    setCidade("");
-    setEstado("");
+    return "";
   };
+const handleCadastro = async () => {
+  const erro = validarCadastro();
+  if (erro) {
+    setErrorMessage(erro);
+    return;
+  }
+
+  const address = `${form.rua}, ${form.numero}${form.complemento ? ` - ${form.complemento}` : ""}, ${form.bairro}, ${form.cidade} - ${form.estado}, CEP ${form.cep}`;
+
+  const payload = {
+    username: form.username,
+    password: form.password,
+    email: form.email,
+    phoneNumber: form.phoneNumber.replace(/\D/g, ""),
+    address,
+  };
+
+  try {
+    // Simulando envio para o backend aqui:
+    console.log("Cadastrando:", payload);
+
+    // Salvando no AsyncStorage
+    await AsyncStorage.setItem("userName", payload.username);
+    await AsyncStorage.setItem("userAddress", payload.address);
+
+    // Navegar para Dashboard
+    navigation.replace("Dashboard");
+
+    // Resetar o formulário
+    setForm({
+      username: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      phoneNumber: "",
+      cep: "",
+      rua: "",
+      numero: "",
+      complemento: "",
+      bairro: "",
+      cidade: "",
+      estado: "",
+    });
+    setErrorMessage("");
+
+  } catch (error) {
+    console.error("Erro ao cadastrar:", error);
+    setErrorMessage("Erro ao salvar dados. Tente novamente.");
+  }
+};
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Crie Sua Conta</Text>
+      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
-      {errorMessage ? (
-        <Text style={styles.errorText}>{errorMessage}</Text>
-      ) : null}
-
-      <View style={styles.inputContainer}>
-        <Icon name="account" size={20} color="#777" style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Nome de Usuário"
-          value={username}
-          onChangeText={setUsername}
-          autoCapitalize="none"
-        />
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Icon name="email" size={20} color="#777" style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="E-mail"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Icon name="lock" size={20} color="#777" style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Senha"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Icon name="lock-check" size={20} color="#777" style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Confirmar Senha"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry
-        />
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Icon name="phone" size={20} color="#777" style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Número de Telefone"
-          value={formatarTelefone(phoneNumber)}
-          onChangeText={(text) => setPhoneNumber(text.replace(/\D/g, ""))}
-          keyboardType="phone-pad"
-          maxLength={15}
-        />
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Icon
-          name="map-marker-radius"
-          size={20}
-          color="#777"
-          style={styles.icon}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="CEP"
-          value={cep}
-          onChangeText={setCep}
-          keyboardType="numeric"
-          maxLength={9}
-        />
-        {loadingCep && <ActivityIndicator size="small" color="#4caf50" />}
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Icon name="map-marker" size={20} color="#777" style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Rua"
-          value={rua}
-          onChangeText={setRua}
-          editable={!loadingCep}
-        />
-      </View>
-      <View style={styles.rowContainer}>
-        <View style={[styles.inputContainer, styles.rowInputHalf]}>
-          <Icon name="numeric" size={20} color="#777" style={styles.icon} />
+      {[
+        { placeholder: "Nome de Usuário", key: "username", icon: "account" },
+        { placeholder: "E-mail", key: "email", icon: "email", keyboardType: "email-address" },
+        { placeholder: "Senha", key: "password", icon: "lock", secure: true },
+        { placeholder: "Confirmar Senha", key: "confirmPassword", icon: "lock-check", secure: true },
+        {
+          placeholder: "Número de Telefone",
+          key: "phoneNumber",
+          icon: "phone",
+          keyboardType: "phone-pad",
+          formatter: formatarTelefone,
+        },
+        { placeholder: "CEP", key: "cep", icon: "map-marker-radius", keyboardType: "numeric" },
+        { placeholder: "Rua", key: "rua", icon: "map-marker" },
+        { placeholder: "Número", key: "numero", icon: "numeric", keyboardType: "numeric" },
+        { placeholder: "Complemento", key: "complemento", icon: "home-city-outline" },
+        { placeholder: "Bairro", key: "bairro", icon: "map-marker-outline" },
+        { placeholder: "Cidade", key: "cidade", icon: "city" },
+        { placeholder: "UF", key: "estado", icon: "map-marker-check", maxLength: 2 },
+      ].map((field) => (
+        <View key={field.key} style={styles.inputContainer}>
+          <Icon name={field.icon} size={20} color="#777" style={styles.icon} />
           <TextInput
             style={styles.input}
-            placeholder="Número"
-            value={numero}
-            onChangeText={setNumero}
-            keyboardType="numeric"
+            placeholder={field.placeholder}
+            value={
+              field.formatter
+                ? field.formatter(form[field.key as keyof typeof form])
+                : form[field.key as keyof typeof form]
+            }
+            onChangeText={(text) => handleChange(field.key, text)}
+            keyboardType={field.keyboardType as any}
+            secureTextEntry={field.secure}
+            autoCapitalize={field.key === "email" || field.key === "username" ? "none" : "sentences"}
+            maxLength={field.maxLength}
+            editable={loadingCep && ["rua", "bairro", "cidade", "estado"].includes(field.key) ? false : true}
           />
+          {field.key === "cep" && loadingCep && <ActivityIndicator size="small" color="#4caf50" />}
         </View>
-        <View
-          style={[
-            styles.inputContainer,
-            styles.rowInputHalf,
-            { marginLeft: 10 },
-          ]}
-        >
-          <Icon
-            name="home-city-outline"
-            size={20}
-            color="#777"
-            style={styles.icon}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Complemento"
-            value={complemento}
-            onChangeText={setComplemento}
-          />
-        </View>
-      </View>
-      <View style={styles.inputContainer}>
-        <Icon
-          name="map-marker-outline"
-          size={20}
-          color="#777"
-          style={styles.icon}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Bairro"
-          value={bairro}
-          onChangeText={setBairro}
-          editable={!loadingCep}
-        />
-      </View>
-      <View style={styles.rowContainer}>
-        <View style={[styles.inputContainer, styles.rowInputHalf]}>
-          <Icon name="city" size={20} color="#777" style={styles.icon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Cidade"
-            value={cidade}
-            onChangeText={setCidade}
-            editable={!loadingCep}
-          />
-        </View>
-        <View
-          style={[
-            styles.inputContainer,
-            styles.rowInputHalf,
-            { marginLeft: 10 },
-          ]}
-        >
-          <Icon
-            name="map-marker-check"
-            size={20}
-            color="#777"
-            style={styles.icon}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="UF"
-            value={estado}
-            onChangeText={setEstado}
-            maxLength={2}
-            autoCapitalize="characters"
-            editable={!loadingCep}
-          />
-        </View>
-      </View>
+      ))}
 
       <TouchableOpacity style={styles.button} onPress={handleCadastro}>
         <Text style={styles.buttonText}>Cadastrar</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.loginLink}
-        onPress={() => navigation.replace("LoginScreen")} 
-      >
+      <TouchableOpacity onPress={() => navigation.replace("LoginScreen")} style={styles.loginLink}>
         <Text style={styles.loginText}>Já tem uma conta? Faça Login</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -420,17 +259,6 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 400,
     height: 55,
-  },
-  rowContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-    maxWidth: 400,
-    marginBottom: 15,
-  },
-  rowInputHalf: {
-    flex: 1,
-    marginBottom: 0,
   },
   icon: {
     marginRight: 10,

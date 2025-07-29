@@ -1,11 +1,11 @@
-// src/components/login.tsx
-
+import api from "@/service/api";
 import { RootStackParamList } from "@/types/navigation";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import {
-  KeyboardAvoidingView, // Para ajustar a tela quando o teclado aparecer
+  KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
@@ -30,19 +30,39 @@ export default function LoginScreen() {
 
   // Função para lidar com o login
   const handleLogin = () => {
-    setErrorMessage(""); 
+    api.post("/login", {
+      username: username.trim(),
+      password: password,
+    })
+      .then(async (response) => {
+        console.log("Login bem-sucedido:", response.data);
 
-    if (username === "user" && password === "123") {
-      navigation.navigate("Dashboard"); 
-      setUsername("");
-      setPassword("");
-    } else {
-      setErrorMessage("Nome de usuário ou senha inválidos.")
-    }
+        
+    await AsyncStorage.setItem('userName', response.data.name);
+    await AsyncStorage.setItem("userAddress", response.data.address);
+
+        // Redireciona para a dashboard
+        navigation.navigate("Dashboard");
+
+        // Limpa campos e mensagens
+        setUsername("");
+        setPassword("");
+        setErrorMessage("");
+      })
+      .catch((error) => {
+        console.error("Erro no login:", error);
+
+        if (error.response && error.response.status === 401) {
+          setErrorMessage("Usuário ou senha incorretos.");
+        } else {
+          setErrorMessage("Erro ao conectar com o servidor.");
+        }
+      });
   };
 
+  // Ir para a tela de cadastro
   const goToCadastro = () => {
-    navigation.navigate("CadastroScreen"); 
+    navigation.navigate("CadastroScreen");
   };
 
   return (
@@ -67,10 +87,11 @@ export default function LoginScreen() {
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
-            keyboardType="email-address" // Geralmente usernames são e-mails
+            keyboardType="email-address"
           />
         </View>
 
+        {/* Campo de Senha */}
         <View style={styles.inputContainer}>
           <Icon name="lock" size={20} color="#777" style={styles.icon} />
           <TextInput
@@ -78,7 +99,7 @@ export default function LoginScreen() {
             placeholder="Senha"
             value={password}
             onChangeText={setPassword}
-            secureTextEntry 
+            secureTextEntry
           />
         </View>
 
@@ -87,10 +108,11 @@ export default function LoginScreen() {
           <Text style={styles.buttonText}>Entrar</Text>
         </TouchableOpacity>
 
-        {/* Opção para Cadastro */}
+        {/* Link para Cadastro */}
         <TouchableOpacity style={styles.cadastroLink} onPress={goToCadastro}>
           <Text style={styles.cadastroText}>
-            Não tem uma conta? <Text style={styles.cadastroTextBold}>Cadastre-se</Text>
+            Não tem uma conta?{" "}
+            <Text style={styles.cadastroTextBold}>Cadastre-se</Text>
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -104,12 +126,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
-    backgroundColor: "#f0f4f8", // Fundo claro
+    backgroundColor: "#f0f4f8",
   },
   title: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#2e7d32", // Verde escuro
+    color: "#2e7d32",
     marginBottom: 10,
   },
   subtitle: {
@@ -142,7 +164,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   errorText: {
-    color: "#d32f2f", // Vermelho
+    color: "#d32f2f",
     marginBottom: 15,
     fontSize: 14,
     textAlign: "center",
@@ -150,7 +172,7 @@ const styles = StyleSheet.create({
     maxWidth: 400,
   },
   button: {
-    backgroundColor: "#4caf50", // Verde vibrante
+    backgroundColor: "#4caf50",
     borderRadius: 10,
     paddingVertical: 15,
     width: "100%",
@@ -177,7 +199,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   cadastroTextBold: {
-    color: "#2196f3", // Azul
+    color: "#2196f3",
     fontWeight: "bold",
     textDecorationLine: "underline",
   },
