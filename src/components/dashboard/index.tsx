@@ -146,7 +146,7 @@ useEffect(() => {
       {/* Informações do usuário */}
       <View style={styles.userInfo}>
         <Icon name="home" size={30} color="#555" />
-        <Text style={styles.user}>Bem-vindo, {userName} !</Text>
+        <Text style={styles.user}>Bem-vindo, {userName}!</Text>
       </View>
 
       {/* Botões principais */}
