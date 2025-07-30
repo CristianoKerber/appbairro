@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://18.116.202.16:8080', // substitua pelo IP do seu backend
+  baseURL: 'http://localhost:8080', // substitua pelo IP do seu backend
   headers: {
     'Content-Type': 'application/json',
   },

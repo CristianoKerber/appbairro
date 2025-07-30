@@ -21,9 +21,11 @@ export async function registerUser(userData: {
   phoneNumber: string;
   address: string;
 }) {
-  const response = await api.post("/usuarios", userData);
+  const response = await api.post("/api/users/save", userData);
   return response.data;
 }
+
+
 
 export async function loginUser(data: LoginPayload): Promise<LoginResponse> {
   const response = await api.post("/login", data);

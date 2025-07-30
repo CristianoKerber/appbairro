@@ -2,14 +2,14 @@
 
 import axios from "axios";
 
-const API_BASE_URL = "http://18.116.202.16:8080";
+const API_BASE_URL = "http://10.35.214.100:3306";
 
 export interface CollectedItem {
   ItemName: string;
   ItemDescription: string;
   quantity: number;
   collectedDate: string;
-  collectId: number; // FK para Collect
+  collectId: number; 
 }
 
 const CollectedItemService = {

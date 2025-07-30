@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
+import api from "@/service/api";
 import { RootStackParamList } from "@/types/navigation";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -139,17 +140,16 @@ const handleCadastro = async () => {
   };
 
   try {
-    // Simulando envio para o backend aqui:
     console.log("Cadastrando:", payload);
 
-    // Salvando no AsyncStorage
     await AsyncStorage.setItem("userName", payload.username);
     await AsyncStorage.setItem("userAddress", payload.address);
 
-    // Navegar para Dashboard
-    navigation.replace("Dashboard");
+    api.post("/api/users/save", payload);
 
-    // Resetar o formulário
+
+    // navigation.replace("Dashboard");
+
     setForm({
       username: "",
       email: "",

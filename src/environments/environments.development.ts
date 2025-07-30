@@ -1,3 +1,3 @@
 export const Envinormenst = {
-    SERVIDOS : 'http://18.116.202.16:8080',
+    SERVIDOS : 'http://10.35.214.100:3306',
 }; 
