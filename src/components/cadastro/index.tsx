@@ -148,7 +148,7 @@ const handleCadastro = async () => {
     api.post("/api/users/save", payload);
 
 
-    // navigation.replace("Dashboard");
+    navigation.replace("Dashboard");
 
     setForm({
       username: "",

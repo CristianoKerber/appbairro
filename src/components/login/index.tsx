@@ -1,6 +1,7 @@
+// login.tsx ou LoginScreen.tsx
 import api from "@/service/api";
 import { RootStackParamList } from "@/types/navigation";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useState } from "react";
@@ -23,44 +24,39 @@ type LoginScreenNavigationProp = NativeStackNavigationProp<
 
 export default function LoginScreen() {
   const navigation = useNavigation<LoginScreenNavigationProp>();
-
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Função para lidar com o login
-  const handleLogin = () => {
-    api.post("/login", {
-      username: username.trim(),
-      password: password,
-    })
-      .then(async (response) => {
-        console.log("Login bem-sucedido:", response.data);
-
-        
-    await AsyncStorage.setItem('userName', response.data.name);
-    await AsyncStorage.setItem("userAddress", response.data.address);
-
-        // Redireciona para a dashboard
-        navigation.navigate("Dashboard");
-
-        // Limpa campos e mensagens
-        setUsername("");
-        setPassword("");
-        setErrorMessage("");
-      })
-      .catch((error) => {
-        console.error("Erro no login:", error);
-
-        if (error.response && error.response.status === 401) {
-          setErrorMessage("Usuário ou senha incorretos.");
-        } else {
-          setErrorMessage("Erro ao conectar com o servidor.");
-        }
+  const handleLogin = async () => {
+    try {
+      const response = await api.post("/api/users/login", {
+        email: email.trim(),
+        password: password,
       });
+
+      console.log("Login successful:", response.data);
+      const { name, address } = response.data;
+
+      await AsyncStorage.setItem("userName", name);
+      await AsyncStorage.setItem("userAddress", address);
+
+      navigation.navigate("Dashboard");
+
+      setEmail("");
+      setPassword("");
+      setErrorMessage("");
+    } catch (error: any) {
+      console.error("Erro no login:", error);
+
+      if (error.response && error.response.status === 401) {
+        setErrorMessage("Usuário ou senha incorretos.");
+      } else {
+        setErrorMessage("Erro ao conectar com o servidor.");
+      }
+    }
   };
 
-  // Ir para a tela de cadastro
   const goToCadastro = () => {
     navigation.navigate("CadastroScreen");
   };
@@ -78,20 +74,20 @@ export default function LoginScreen() {
           <Text style={styles.errorText}>{errorMessage}</Text>
         ) : null}
 
-        {/* Campo de Usuário */}
+        {/* Email */}
         <View style={styles.inputContainer}>
-          <Icon name="account" size={20} color="#777" style={styles.icon} />
+          <Icon name="email" size={20} color="#777" style={styles.icon} />
           <TextInput
             style={styles.input}
-            placeholder="Nome de Usuário"
-            value={username}
-            onChangeText={setUsername}
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
             autoCapitalize="none"
             keyboardType="email-address"
           />
         </View>
 
-        {/* Campo de Senha */}
+        {/* Senha */}
         <View style={styles.inputContainer}>
           <Icon name="lock" size={20} color="#777" style={styles.icon} />
           <TextInput
@@ -103,12 +99,12 @@ export default function LoginScreen() {
           />
         </View>
 
-        {/* Botão de Login */}
+        {/* Botão */}
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>Entrar</Text>
         </TouchableOpacity>
 
-        {/* Link para Cadastro */}
+        {/* Link para cadastro */}
         <TouchableOpacity style={styles.cadastroLink} onPress={goToCadastro}>
           <Text style={styles.cadastroText}>
             Não tem uma conta?{" "}

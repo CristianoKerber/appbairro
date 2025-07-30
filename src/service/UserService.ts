@@ -1,10 +1,11 @@
 import api from "./api";
 
 type LoginPayload = {
-  username: string;
+  email: string;
   password: string;
 };
 
+  
 type LoginResponse = {
   token: string;
   usuario: {
@@ -25,10 +26,8 @@ export async function registerUser(userData: {
   return response.data;
 }
 
-
-
 export async function loginUser(data: LoginPayload): Promise<LoginResponse> {
-  const response = await api.post("/login", data);
+  const response = await api.post("/api/users/login", data);
   return response.data;
 }
 
