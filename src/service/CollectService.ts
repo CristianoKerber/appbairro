@@ -1,15 +1,15 @@
 // services/CollectService.ts
 
-import api from "./api"; // seu axios configurado
+import api from "./api";
 
 export interface Collect {
   id?: number;
   Collected: boolean;
-  collecteDate: string; // formato ISO yyyy-mm-dd
+  collecteDate: string; 
 }
 
 const createCollect = async (collectData: Collect): Promise<Collect> => {
-  const response = await api.post<Collect>("/collect", collectData);
+  const response = await api.post<Collect>("/api/collects/save", collectData);
   return response.data;
 };
 

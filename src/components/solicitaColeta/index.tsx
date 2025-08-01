@@ -2,6 +2,7 @@
 
 import CollectService from "@/service/CollectService"; // Keep this import
 import CollectedItemService from "@/service/CollectedItemService";
+import api from "@/service/api";
 import { RootStackParamList } from "@/types/navigation";
 import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -67,7 +68,6 @@ export default function SolicitaColeta() {
       return;
     }
 try {
-  // 1. Criar a coleta
   const collectPayload = {
     Collected: false,
     collecteDate: dataColeta.toISOString().split("T")[0],
@@ -93,6 +93,7 @@ try {
     await CollectedItemService.createCollectedItem(collectedItemPayload);
   }
 
+  api.post("api/collects/save", collectPayload);
   alert(
     `Coleta agendada para ${formatarData(dataColeta)} no endereço ${endereco} com os resíduos: ${residuosSelecionados.join(
       ", "

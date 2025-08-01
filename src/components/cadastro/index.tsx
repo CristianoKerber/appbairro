@@ -178,7 +178,7 @@ const handleCadastro = async () => {
       <Text style={styles.title}>Crie Sua Conta</Text>
       {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
-      {[
+      {[  
         { placeholder: "Nome de Usuário", key: "username", icon: "account" },
         { placeholder: "E-mail", key: "email", icon: "email", keyboardType: "email-address" },
         { placeholder: "Senha", key: "password", icon: "lock", secure: true },

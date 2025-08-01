@@ -1,8 +1,6 @@
 // services/CollectedItemService.ts
 
-import axios from "axios";
-
-const API_BASE_URL = "http://10.35.214.100:3306";
+import api from "./api";
 
 export interface CollectedItem {
   ItemName: string;
@@ -13,18 +11,8 @@ export interface CollectedItem {
 }
 
 const CollectedItemService = {
-  async getLatestCollectStatus() {
-    const response = await axios.get(`${API_BASE_URL}/collect/latest`);
-    return response.data;
-  },
-
-  async getCollectedItemsInMonth() {
-    const response = await axios.get(`${API_BASE_URL}/collected-items/month`);
-    return response.data;
-  },
-
   async createCollectedItem(itemData: CollectedItem): Promise<CollectedItem> {
-    const response = await axios.post<CollectedItem>(`${API_BASE_URL}/collectedItem`, itemData);
+    const response = await api.post<CollectedItem>("/api/collectiten/save", itemData);
     return response.data;
   },
 };
