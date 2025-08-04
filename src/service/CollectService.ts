@@ -6,13 +6,30 @@ export interface Collect {
   id?: number;
   Collected: boolean;
   collecteDate: string; 
+  ItemName?: string;
+  ItemDescription?: string;
+  quantity?: number;
 }
 
 const createCollect = async (collectData: Collect): Promise<Collect> => {
   const response = await api.post<Collect>("/api/collects/save", collectData);
   return response.data;
 };
-
+const getAllCollects = async () => {
+  const response = await api.get("/api/collects/all");
+  return response.data;
+};
+const getTotalCollectedInMonth = async () => {
+  const response = await api.get("/api/collects/monthly-total"); // ajuste a rota
+  return response.data; // { total: number }
+};
+const getLatestCollectStatus = async () => {
+  const response = await api.get("/api/collects/latest-status");
+  return response.data;
+};
 export default {
   createCollect,
+  getAllCollects,
+  getTotalCollectedInMonth,
+  getLatestCollectStatus,
 };

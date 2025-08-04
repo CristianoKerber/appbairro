@@ -2,6 +2,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React from "react";
 
 import CadastroScreen from "@/components/cadastro";
+import { Configuracao } from "@/components/config";
 import Dashboard from "@/components/dashboard";
 import LoginScreen from "@/components/login";
 import SolicitaColeta from "@/components/solicitaColeta";
@@ -16,6 +17,7 @@ export default function App() {
       <Stack.Screen name="CadastroScreen" component={CadastroScreen} />
       <Stack.Screen name="Dashboard" component={Dashboard} />
       <Stack.Screen name="SolicitaColeta" component={SolicitaColeta} />
+      <Stack.Screen name="Configuracoes" component={Configuracao} />
     </Stack.Navigator>
   );
 }

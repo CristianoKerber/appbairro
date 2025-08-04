@@ -1,4 +1,5 @@
-import CollectedItemService from "@/service/CollectedItemService";
+
+import CollectService from "@/service/CollectService";
 import { RootStackParamList } from "@/types/navigation";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from "@react-navigation/native";
@@ -77,7 +78,7 @@ const Dashboard = () => {
     setLoadingStatus(true);
     setCollectStatus(null);
     try {
-      const response = await CollectedItemService.getLatestCollectStatus();
+      const response = await CollectService.getLatestCollectStatus();
       if (response && response.Collected !== undefined) {
         const statusText = response.Collected
           ? "Coleta Confirmada!"
@@ -104,11 +105,10 @@ useEffect(() => {
 
   fetchUserName();
 }, []);
-  // Função para buscar itens coletados para o gráfico
   const fetchCollectedItemsForGraph = async () => {
     setLoadingGraph(true);
     try {
-      const items = await CollectedItemService.getCollectedItemsInMonth();
+      const items = await CollectService.getTotalCollectedInMonth();
 
       const totalQuantity = items.reduce(
         (sum: number, item: { quantity: number }) => sum + (item.quantity || 0),
@@ -147,9 +147,15 @@ useEffect(() => {
       <View style={styles.userInfo}>
         <Icon name="home" size={30} color="#555" />
         <Text style={styles.user}>Bem-vindo, {userName}!</Text>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("Configuracoes")}
+          style={{ padding: 10, backgroundColor: "#ffffffff", borderRadius: 5 }}
+        >
+          <Icon name="cog" size={20} color="#555" />
+        </TouchableOpacity>
       </View>
 
-      {/* Botões principais */}
+
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={[styles.button, { backgroundColor: "#00BCD4" }]}

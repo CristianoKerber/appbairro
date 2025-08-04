@@ -1,8 +1,6 @@
 // SolicitaColeta.tsx
 
 import CollectService from "@/service/CollectService"; // Keep this import
-import CollectedItemService from "@/service/CollectedItemService";
-import api from "@/service/api";
 import { RootStackParamList } from "@/types/navigation";
 import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -33,9 +31,9 @@ export default function SolicitaColeta() {
 
   const tiposResiduos = [
     { nome: "Papel", icon: "file-alt", cor: "#2aa7b7" },
-    { nome: "Plástico", icon: "bottle-water", cor: "#4caf50" },
-    { nome: "Vidro", icon: "wine-bottle", cor: "#4caf50" },
-    { nome: "Metal", icon: "can", cor: "#7a9e4c" },
+    { nome: "Plástico", icon: "recycle", cor: "#4caf50" }, // Ícone corrigido
+    { nome: "Vidro", icon: "wine-bottle", cor: "#2196f3" },
+    { nome: "Metal", icon: "cogs", cor: "#7a9e4c" },
   ];
 
   const toggleResiduo = (nome: string) => {
@@ -82,18 +80,18 @@ try {
 
   // 2. Criar os itens coletados vinculados à coleta criada
   for (const nomeItem of residuosSelecionados) {
-    const collectedItemPayload = {
+    const collectedPayload = {
       ItemName: nomeItem,
       ItemDescription: `Resíduo do tipo ${nomeItem}`,
       quantity: 1,
-      collectedDate: dataColeta.toISOString().split("T")[0],
+      collecteDate: dataColeta.toISOString().split("T")[0],
       collectId: collectId,
+      Collected: false,
     };
 
-    await CollectedItemService.createCollectedItem(collectedItemPayload);
+    await CollectService.createCollect(collectedPayload);
   }
 
-  api.post("api/collects/save", collectPayload);
   alert(
     `Coleta agendada para ${formatarData(dataColeta)} no endereço ${endereco} com os resíduos: ${residuosSelecionados.join(
       ", "
@@ -211,12 +209,7 @@ const styles = StyleSheet.create({
     height: 50,
     marginBottom: 10,
   },
-  input: {
-    flex: 1,
-    marginLeft: 10,
-    fontSize: 16,
-    color: "#333",
-  },
+  input: { flex: 1, marginLeft: 10, fontSize: 16, color: "#333" },
   buttonsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -232,10 +225,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
     marginBottom: 10,
   },
-  btnText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
+  btnText: { color: "#fff", fontWeight: "bold" },
   agendarBtn: {
     marginTop: 30,
     borderRadius: 12,
