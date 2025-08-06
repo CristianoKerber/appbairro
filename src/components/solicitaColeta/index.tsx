@@ -1,6 +1,7 @@
 // SolicitaColeta.tsx
 
-import CollectService from "@/service/CollectService"; // Keep this import
+import CollectService from "@/service/CollectService";
+import UserService from "@/service/UserService";
 import { RootStackParamList } from "@/types/navigation";
 import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -31,7 +32,7 @@ export default function SolicitaColeta() {
 
   const tiposResiduos = [
     { nome: "Papel", icon: "file-alt", cor: "#2aa7b7" },
-    { nome: "Plástico", icon: "recycle", cor: "#4caf50" }, // Ícone corrigido
+    { nome: "Plástico", icon: "recycle", cor: "#4caf50" }, 
     { nome: "Vidro", icon: "wine-bottle", cor: "#2196f3" },
     { nome: "Metal", icon: "cogs", cor: "#7a9e4c" },
   ];
@@ -67,7 +68,7 @@ export default function SolicitaColeta() {
     }
 try {
   const collectPayload = {
-    Collected: false,
+    collected: false,
     collecteDate: dataColeta.toISOString().split("T")[0],
   };
 
@@ -78,15 +79,19 @@ try {
     throw new Error("ID da coleta não foi retornado pelo backend.");
   }
 
-  // 2. Criar os itens coletados vinculados à coleta criada
+    const UserId = await localStorage.getItem('userId');
+
+    const user = await UserService.getUser(UserId as string);
+  
+  console.log("ID do usuário:", UserId); 
   for (const nomeItem of residuosSelecionados) {
     const collectedPayload = {
-      ItemName: nomeItem,
-      ItemDescription: `Resíduo do tipo ${nomeItem}`,
+      itemName: nomeItem,
+      itemDescription: `Resíduo do tipo ${nomeItem}`,
       quantity: 1,
       collecteDate: dataColeta.toISOString().split("T")[0],
-      collectId: collectId,
-      Collected: false,
+      collected: false,
+      user: user, 
     };
 
     await CollectService.createCollect(collectedPayload);
@@ -97,7 +102,7 @@ try {
       ", "
     )}.`
   );
-  navigator.replace("Dashboard");
+  //navigator.replace("Dashboard");
 } catch (error) {
   console.error("Erro ao agendar coleta:", error);
   alert("Erro ao agendar a coleta. Tente novamente.");

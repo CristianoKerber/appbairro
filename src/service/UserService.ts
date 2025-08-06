@@ -31,7 +31,13 @@ export async function loginUser(data: LoginPayload): Promise<LoginResponse> {
   return response.data;
 }
 
-export async function getUserProfile() {
-  const response = await api.get("/usuario/perfil");
+export async function getUser(userId: string){
+    const response = await api.get(`api/users/${userId}`);
   return response.data;
+}
+
+export default {
+  registerUser,
+  loginUser,
+  getUser,
 }

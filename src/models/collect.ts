@@ -5,4 +5,5 @@ export class Collect{
   itemName?: string;
   itemDescription?: string;
   quantity?: number;
+  userId?: number;
 }

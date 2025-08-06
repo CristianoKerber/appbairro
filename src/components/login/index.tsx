@@ -36,11 +36,13 @@ export default function LoginScreen() {
       });
 
       console.log("Login successful:", response.data);
-      const { name, address } = response.data;
+      const { username, address, id } = response.data;
 
-      await AsyncStorage.setItem("userName", name);
+      await AsyncStorage.setItem("userName", username);
       await AsyncStorage.setItem("userAddress", address);
-
+      await localStorage.setItem("userId", id);
+      
+      console.log("id:", id);
       navigation.navigate("Dashboard");
 
       setEmail("");

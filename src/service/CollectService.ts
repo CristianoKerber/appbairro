@@ -4,7 +4,7 @@ import api from "./api";
 
 export interface Collect {
   id?: number;
-  Collected: boolean;
+  collected: boolean;
   collecteDate: string; 
   ItemName?: string;
   ItemDescription?: string;
@@ -12,6 +12,7 @@ export interface Collect {
 }
 
 const createCollect = async (collectData: Collect): Promise<Collect> => {
+  console.log(collectData);
   const response = await api.post<Collect>("/api/collects/save", collectData);
   return response.data;
 };
@@ -21,7 +22,7 @@ const getAllCollects = async () => {
 };
 const getTotalCollectedInMonth = async () => {
   const response = await api.get("/api/collects/monthly-total"); // ajuste a rota
-  return response.data; // { total: number }
+  return response.data; 
 };
 const getLatestCollectStatus = async () => {
   const response = await api.get("/api/collects/latest-status");
