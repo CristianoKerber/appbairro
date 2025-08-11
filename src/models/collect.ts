@@ -1,6 +1,6 @@
 export class Collect{
     id?: number;
-  Collected?: boolean;
+  collected?: boolean;
   collecteDate?: string; 
   itemName?: string;
   itemDescription?: string;

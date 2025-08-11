@@ -79,7 +79,7 @@ try {
     throw new Error("ID da coleta não foi retornado pelo backend.");
   }
 
-    const UserId = await localStorage.getItem('userId');
+    const UserId = await AsyncStorage.getItem('userId');
 
     const user = await UserService.getUser(UserId as string);
   
@@ -102,7 +102,7 @@ try {
       ", "
     )}.`
   );
-  //navigator.replace("Dashboard");
+  navigator.replace("Dashboard");
 } catch (error) {
   console.error("Erro ao agendar coleta:", error);
   alert("Erro ao agendar a coleta. Tente novamente.");

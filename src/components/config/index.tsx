@@ -1,3 +1,6 @@
+// Configuracao.tsx
+
+import UserService from '@/service/UserService';
 import { RootStackParamList } from '@/types/navigation';
 import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -6,13 +9,16 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-type ConfiguracaoNavigationProp = NativeStackNavigationProp<RootStackParamList,"Configuracoes">;
+type ConfiguracaoNavigationProp = NativeStackNavigationProp<RootStackParamList, "Configuracoes">;
+
 export function Configuracao() {
   const navigator = useNavigation<ConfiguracaoNavigationProp>();
-  
+
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [userCep, setUserCep] = useState('');
+  const [telefone, setTelefone] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -23,9 +29,12 @@ export function Configuracao() {
         const userData = await AsyncStorage.getItem('user');
         if (userData) {
           const user = JSON.parse(userData);
-          setUserName(user.name);
-          setUserEmail(user.email);
-          setUserCep(user.cep);
+          setUserName(user.name || '');
+          setUserEmail(user.email || '');
+          setTelefone(user.phoneNumber || '');
+          // Carrega o CEP do campo 'address'
+          setUserCep(user.address || ''); 
+          setPassword(user.password || '');
         }
       } catch (error) {
         console.error('Erro ao carregar dados do usuário:', error);
@@ -38,7 +47,8 @@ export function Configuracao() {
   }, []);
 
   const handleSave = async () => {
-    if (!userName || !userEmail || !userCep) {
+    // Valida se os campos obrigatórios estão preenchidos
+    if (!userName || !userEmail || !userCep || !password || !telefone) {
       Alert.alert('Atenção', 'Todos os campos são obrigatórios.');
       return;
     }
@@ -46,24 +56,37 @@ export function Configuracao() {
     setLoading(true);
 
     try {
-      // Simulação de chamada de API para atualizar o usuário
+      // Obtém o ID do usuário para a chamada da API
+      const userId = await AsyncStorage.getItem('userId');
+      if (!userId) {
+        Alert.alert('Erro', 'ID do usuário não encontrado. Faça login novamente.');
+        return;
+      }
+
+      // Cria o objeto com os dados atualizados do usuário
+      // CORRIGIDO: O campo do CEP é 'address', conforme a sua entidade Java
       const updatedUser = {
         name: userName,
         email: userEmail,
-        cep: userCep,
-        // Mantém outros campos que possam existir, como 'id' e 'address'
+        address: userCep, 
+        password: password,
+        phoneNumber: telefone,
       };
 
+      // Log para visualização do payload antes do envio
+      console.log('Dados a serem enviados para o backend:', updatedUser);
+
+      // Chama o serviço de API para atualizar o usuário
+      await UserService.updateUser(userId as string, updatedUser);
+
+      // Salva os dados atualizados no AsyncStorage para manter o estado local consistente
       await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
       
       Alert.alert('Sucesso', 'Suas informações foram salvas com sucesso!');
-      console.log('Dados salvos:', updatedUser);
-      // Aqui você faria a chamada para a sua API Spring
-      // Ex: await UserService.updateUser(updatedUser);
-      
+
     } catch (error) {
       console.error('Erro ao salvar dados:', error);
-      Alert.alert('Erro', 'Houve um problema ao salvar suas informações.');
+      Alert.alert('Erro', 'Houve um problema ao salvar suas informações. Verifique sua conexão ou tente novamente mais tarde.');
     } finally {
       setLoading(false);
     }
@@ -71,9 +94,9 @@ export function Configuracao() {
 
   const handleLogout = async () => {
     try {
-      await AsyncStorage.clear(); // Limpa todos os dados do usuário
+      await AsyncStorage.clear(); 
       Alert.alert('Sessão encerrada', 'Você saiu da sua conta.');
-      navigator.replace("LoginScreen"); // Redireciona para a tela de Login
+      navigator.replace("LoginScreen");
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
     }
@@ -96,6 +119,32 @@ export function Configuracao() {
         />
       </View>
 
+      <Text style={styles.label}>CEP</Text>
+      <View style={styles.inputContainer}>
+        <FontAwesome5 name="map-marker-alt" size={18} color="#999" style={styles.icon} />
+        <TextInput
+          style={styles.input}
+          value={userCep}
+          onChangeText={setUserCep}
+          placeholder="00000-000"
+          keyboardType="numeric"
+          maxLength={9}
+        />
+      </View>
+
+      <Text style={styles.label}>Telefone</Text>
+      <View style={styles.inputContainer}>
+        <MaterialIcons name="phone" size={18} color="#999" style={styles.icon} />
+        <TextInput
+          style={styles.input}
+          value={telefone}
+          onChangeText={setTelefone}
+          placeholder="(00) 00000-0000"
+          keyboardType="phone-pad"
+          maxLength={15}
+        />
+      </View>
+
       <Text style={styles.label}>E-mail</Text>
       <View style={styles.inputContainer}>
         <MaterialIcons name="email" size={18} color="#999" style={styles.icon} />
@@ -107,17 +156,16 @@ export function Configuracao() {
           keyboardType="email-address"
         />
       </View>
-      
-      <Text style={styles.label}>CEP</Text>
+
+      <Text style={styles.label}>Senha</Text>
       <View style={styles.inputContainer}>
-        <FontAwesome5 name="map-marker-alt" size={18} color="#999" style={styles.icon} />
+        <FontAwesome5 name="lock" size={18} color="#999" style={styles.icon} />
         <TextInput
           style={styles.input}
-          value={userCep}
-          onChangeText={setUserCep}
-          placeholder="00000-000"
-          keyboardType="numeric"
-          maxLength={9}
+          value={password}
+          onChangeText={setPassword}
+          placeholder="**********"
+          secureTextEntry
         />
       </View>
 
