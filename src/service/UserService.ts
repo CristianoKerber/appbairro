@@ -36,14 +36,13 @@ export async function getUser(userId: string){
   return response.data;
 }
 
-export async function updateUser(userId: string, userData: {
-  name?: string;
-  email?: string;
-  cep?: string;
-  senha?: string;
-}) {
-  const response = await api.put(`api/users/update/${userId}`);
-  return response.data;
+export const updateUser = async (userId: string, updatedUserData: any) => {
+  try {
+    const response = await api.put(`/api/users/update/${userId}`, updatedUserData);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
 };
 
 
