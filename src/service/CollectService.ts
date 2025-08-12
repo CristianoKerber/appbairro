@@ -28,9 +28,16 @@ const getLatestCollectStatus = async () => {
   const response = await api.get("/api/collects/latest-status");
   return response.data;
 };
+
+const updateCollect = async (collectId: number, updatedData: Partial<Collect>): Promise<Collect> => {
+  const response = await api.put<Collect>(`/api/collects/update/${collectId}`, updatedData);
+  return response.data;
+};
+
 export default {
   createCollect,
   getAllCollects,
   getTotalCollectedInMonth,
   getLatestCollectStatus,
+  updateCollect,
 };

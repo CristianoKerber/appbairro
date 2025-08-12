@@ -5,4 +5,8 @@ export type RootStackParamList = {
   Jardim: undefined;
   Configuracoes: undefined;
   CadastroScreen: undefined;
+  CollectionsScreen: undefined;
+  AdminDashboard: undefined;
+  UsersScreen: undefined;
+  HistoricoScreen: undefined;
 };
