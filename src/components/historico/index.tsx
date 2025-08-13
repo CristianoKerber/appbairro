@@ -1,8 +1,7 @@
-import baseURL from '@/service/api';
+import CollectService from '@/service/CollectService';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
-import DatePicker from 'react-native-modern-datepicker';
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -39,45 +38,76 @@ export function HistoricoScreen() {
         legendFontSize: number;
     }[]>([]);
 
+    // Efeito para buscar os dados do backend
     useEffect(() => {
         const fetchAllCollections = async () => {
             try {
                 setLoading(true);
-                const response = await fetch(`${baseURL}/api/collects/all`);
-                if (!response.ok) {
-                    throw new Error('Falha ao buscar coletas');
+                const data: CollectionRequest[] = await CollectService.getAllCollects(); 
+
+                if (!data || data.length === 0) {
+                    Alert.alert('Aviso', 'Nenhum dado de histórico de coletas encontrado.');
+                    setAllCollections([]);
+                    setFilteredCollections([]);
+                    return;
                 }
-                const data: CollectionRequest[] = await response.json();
+
                 setAllCollections(data);
                 setFilteredCollections(data); // Inicialmente mostra todos
             } catch (error) {
-                Alert.alert('Erro', 'Não foi possível carregar os dados de histórico.');
-                console.error(error);
+                Alert.alert('Erro', 'Não foi possível carregar os dados de histórico. Verifique o servidor e o serviço de coletas.');
+                console.error('Erro ao buscar dados:', error);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchAllCollections();
     }, []);
 
+    // Efeito para processar os dados sempre que o filtro mudar
     useEffect(() => {
         processData(filteredCollections);
     }, [filteredCollections]);
 
     const handleFilterByDate = () => {
+        const dateFormatRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+        
         if (!startDate || !endDate) {
-            Alert.alert('Atenção', 'Selecione a data de início e de fim para filtrar.');
+            Alert.alert('Atenção', 'Preencha as duas datas para filtrar.');
             return;
         }
 
-        const start = new Date(startDate);
-        const end = new Date(endDate);
+        if (!dateFormatRegex.test(startDate) || !dateFormatRegex.test(endDate)) {
+            Alert.alert('Atenção', 'O formato da data deve ser DD/MM/AAAA.');
+            return;
+        }
+
+        const [startDay, startMonth, startYear] = startDate.split('/').map(Number);
+        const [endDay, endMonth, endYear] = endDate.split('/').map(Number);
+        
+        // Criação robusta dos objetos Date com os componentes numéricos
+        const start = new Date(startYear, startMonth - 1, startDay);
+        const end = new Date(endYear, endMonth - 1, endDay);
+        // Para garantir que o filtro inclui o último dia, adicione 1 dia à data final
+        // e subtraia 1 milissegundo para pegar o último momento do dia.
+        // Isso é uma boa prática para filtros de data que não consideram a hora.
+        end.setDate(end.getDate() + 1);
+        end.setMilliseconds(end.getMilliseconds() - 1);
+
+        if (start > end) {
+            Alert.alert('Atenção', 'A data de início não pode ser posterior à data de fim.');
+            return;
+        }
 
         const filtered = allCollections.filter(item => {
+            // O formato do backend (YYYY-MM-DD) é facilmente interpretado pelo new Date()
             const itemDate = new Date(item.collectDate);
             return itemDate >= start && itemDate <= end;
         });
+
+        if (filtered.length === 0) {
+            Alert.alert('Aviso', 'Nenhuma coleta encontrada no período selecionado.');
+        }
 
         setFilteredCollections(filtered);
     };
@@ -85,15 +115,22 @@ export function HistoricoScreen() {
     const processData = (data: CollectionRequest[]) => {
         // Lógica para contar requisições por bairro
         const bairros = data.reduce<Record<string, number>>((acc, item) => {
-            // Supondo que o bairro esteja no formato '..., Bairro X, Cidade - UF'
-            const parts = item.user.address.split(',');
-            const bairro = parts[1] ? parts[1].trim() : 'Não informado';
-            acc[bairro] = (acc[bairro] || 0) + 1;
+            if (item.user?.address) {
+                // Tenta extrair o bairro como a segunda parte do endereço, após a primeira vírgula.
+                // Isso assume um formato "Rua, Bairro, Cidade".
+                const parts = item.user.address.split(',');
+                const bairro = parts[1] ? parts[1].trim() : 'Não informado';
+                acc[bairro] = (acc[bairro] || 0) + 1;
+                console.log(`Endereço: ${item.user.address}, Bairro extraído: ${bairro}`);
+            } else {
+                const bairro = 'Não informado';
+                acc[bairro] = (acc[bairro] || 0) + 1;
+            }
             return acc;
         }, {});
         
         const bairrosChart = Object.keys(bairros).map((key, index) => {
-            const colors = ['#4caf50', '#ffc107', '#00bcd4', '#e74c3c', '#9b59b6'];
+            const colors = ['#4caf50', '#ffc107', '#00bcd4', '#e74c3c', '#9b59b6', '#3498db', '#2ecc71'];
             return {
                 name: key,
                 population: bairros[key],
@@ -111,7 +148,7 @@ export function HistoricoScreen() {
         }, {});
 
         const itensChart = Object.keys(itens).map((key, index) => {
-            const colors = ['#4caf50', '#ffc107', '#00bcd4', '#e74c3c', '#9b59b6'];
+            const colors = ['#4caf50', '#ffc107', '#00bcd4', '#e74c3c', '#9b59b6', '#3498db', '#2ecc71'];
             return {
                 name: key,
                 population: itens[key],
@@ -134,49 +171,37 @@ export function HistoricoScreen() {
             {/* Filtros de Data */}
             <View style={styles.filterContainer}>
                 <Text style={styles.filterTitle}>Filtrar por Data</Text>
-                <DatePicker
-                    options={{
-                        backgroundColor: '#090C08',
-                        textHeaderColor: '#4CAF50',
-                        textDefaultColor: '#FFFFFF',
-                        selectedTextColor: '#fff',
-                        mainColor: '#4CAF50',
-                        textSecondaryColor: '#D6C7A1',
-                        borderColor: 'rgba(122, 146, 165, 0.1)',
-                    }}
-                    mode="calendar"
-                    minuteInterval={30}
-                    style={{ borderRadius: 10 }}
-                    onSelectedChange={(date: string) => {
-                        const [year, month, day] = date.split('/');
-                        setStartDate(`${year}-${month}-${day}`);
-                    }}
-                />
-                <Text style={styles.dateLabel}>Data de Início: {startDate}</Text>
-                <DatePicker
-                    options={{
-                        backgroundColor: '#090C08',
-                        textHeaderColor: '#4CAF50',
-                        textDefaultColor: '#FFFFFF',
-                        selectedTextColor: '#fff',
-                        mainColor: '#4CAF50',
-                        textSecondaryColor: '#D6C7A1',
-                        borderColor: 'rgba(122, 146, 165, 0.1)',
-                    }}
-                    mode="calendar"
-                    minuteInterval={30}
-                    style={{ borderRadius: 10, marginTop: 10 }}
-                    onSelectedChange={(date: string) => {
-                        const [year, month, day] = date.split('/');
-                        setEndDate(`${year}-${month}-${day}`);
-                    }}
-                />
-                <Text style={styles.dateLabel}>Data de Fim: {endDate}</Text>
+                <View style={styles.dateInputContainer}>
+                    <TextInput
+                        style={styles.dateInput}
+                        onChangeText={text => {
+                            setStartDate(text);
+                            // Aqui pode ser interessante resetar o filtro se uma das datas for alterada
+                            // setFilteredCollections(allCollections);
+                        }}
+                        value={startDate}
+                        placeholder="Data de Início (DD/MM/AAAA)"
+                        keyboardType="default"
+                        placeholderTextColor="#999"
+                    />
+                    <TextInput
+                        style={styles.dateInput}
+                        onChangeText={text => {
+                            setEndDate(text);
+                            // Aqui também, para manter a consistência
+                            // setFilteredCollections(allCollections);
+                        }}
+                        value={endDate}
+                        placeholder="Data de Fim (DD/MM/AAAA)"
+                        keyboardType="default"
+                        placeholderTextColor="#999"
+                    />
+                </View>
                 <TouchableOpacity onPress={handleFilterByDate} style={styles.filterButton}>
                     <Text style={styles.filterButtonText}>Aplicar Filtro</Text>
                 </TouchableOpacity>
             </View>
-
+            
             {/* Gráfico de Bairros */}
             <View style={styles.chartCard}>
                 <Text style={styles.chartTitle}>Coletas por Bairro</Text>
@@ -261,13 +286,33 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 10,
         color: '#333',
-    },
-    dateLabel: {
-        marginTop: 5,
-        marginBottom: 10,
-        fontSize: 14,
-        color: '#666',
         textAlign: 'center',
+    },
+    dateInputContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginBottom: 10,
+    },
+    dateInput: {
+        backgroundColor: '#f0f0f0',
+        padding: 10,
+        borderRadius: 8,
+        flex: 1,
+        marginHorizontal: 5,
+        alignItems: 'center',
+        textAlign: 'center',
+        color: '#333',
+    },
+    dateButton: {
+        backgroundColor: '#f0f0f0',
+        padding: 10,
+        borderRadius: 8,
+        flex: 1,
+        marginHorizontal: 5,
+        alignItems: 'center',
+    },
+    dateButtonText: {
+        color: '#333',
     },
     filterButton: {
         backgroundColor: '#4caf50',
@@ -302,5 +347,37 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         color: '#666',
         marginTop: 20,
+    },
+    centeredView: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalView: {
+        margin: 20,
+        backgroundColor: 'white',
+        borderRadius: 20,
+        padding: 35,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+        width: '90%',
+    },
+    closeButton: {
+        backgroundColor: '#e74c3c',
+        padding: 10,
+        borderRadius: 8,
+        marginTop: 15,
+    },
+    closeButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
     },
 });

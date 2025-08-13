@@ -1,4 +1,3 @@
-
 import CollectService from "@/service/CollectService";
 import { RootStackParamList } from "@/types/navigation";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -8,6 +7,7 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Button,
+  Dimensions,
   Modal,
   ScrollView,
   StyleSheet,
@@ -15,48 +15,24 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { Circle, G, Svg } from "react-native-svg";
+import { PieChart } from 'react-native-chart-kit';
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-
-
 
 type DashboardNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   "Dashboard"
 >;
 
-const CircularProgress = ({ percentage }: { percentage: number }) => {
-  const radius = 40;
-  const strokeWidth = 10;
-  const circumference = 2 * Math.PI * radius;
-  const progress =
-    circumference - (circumference * Math.max(0, Math.min(100, percentage))) / 100;
+const screenWidth = Dimensions.get("window").width;
 
-  return (
-    <Svg width={100} height={100}>
-      <G rotation="-90" origin="50,50">
-        <Circle
-          cx="50"
-          cy="50"
-          r={radius}
-          stroke="#D1F0EB"
-          strokeWidth={strokeWidth}
-          fill="none"
-        />
-        <Circle
-          cx="50"
-          cy="50"
-          r={radius}
-          stroke="#30B7B0"
-          strokeWidth={strokeWidth}
-          fill="none"
-          strokeDasharray={circumference}
-          strokeDashoffset={progress}
-        />
-      </G>
-    </Svg>
-  );
-};
+// Define o tipo de dado esperado pelo gráfico de pizza
+interface PieChartDataItem {
+  name: string;
+  population: number;
+  color: string;
+  legendFontColor: string;
+  legendFontSize: number;
+}
 
 const Dashboard = () => {
   // Estado dos modais
@@ -67,11 +43,22 @@ const Dashboard = () => {
   const [loadingStatus, setLoadingStatus] = useState(false);
   const [collectStatus, setCollectStatus] = useState<string | null>(null);
 
-  // Estado gráfico
+  // Estado do gráfico
   const [loadingGraph, setLoadingGraph] = useState(false);
-  const [percentageCollected, setPercentageCollected] = useState(0);
+  // AQUI ESTÁ A CORREÇÃO: Definimos explicitamente o tipo do array
+  const [wasteTypeData, setWasteTypeData] = useState<PieChartDataItem[]>([]);
 
   const navigation = useNavigation<DashboardNavigationProp>();
+  const [userName, setUserName] = useState('');
+
+  // Busca o nome do usuário armazenado localmente
+  useEffect(() => {
+    const fetchUserName = async () => {
+      const name = await AsyncStorage.getItem("userName");
+      if (name) setUserName(name);
+    };
+    fetchUserName();
+  }, []);
 
   // Função para buscar status da coleta
   const fetchCollectStatus = async () => {
@@ -79,8 +66,8 @@ const Dashboard = () => {
     setCollectStatus(null);
     try {
       const response = await CollectService.getLatestCollectStatus();
-      if (response && response.Collected !== undefined) {
-        const statusText = response.Collected
+      if (response && response.collected !== undefined) {
+        const statusText = response.collected
           ? "Coleta Confirmada!"
           : "Aguardando Confirmação!";
         setCollectStatus(statusText);
@@ -95,41 +82,36 @@ const Dashboard = () => {
     }
   };
 
-  const [userName, setUserName] = useState('');
-
-useEffect(() => {
-  const fetchUserName = async () => {
-    const name = await AsyncStorage.getItem("userName");
-    if (name) setUserName(name);
-  };
-
-  fetchUserName();
-}, []);
-  const fetchCollectedItemsForGraph = async () => {
+  const fetchWasteTypeDistribution = async () => {
     setLoadingGraph(true);
     try {
       const items = await CollectService.getTotalCollectedInMonth();
 
-      const totalQuantity = items.reduce(
-        (sum: number, item: { quantity: number }) => sum + (item.quantity || 0),
-        0
-      );
+      const colors = ['#00BCD4', '#FFC107', '#2196F3', '#4CAF50', '#9C27B0', '#F44336'];
+      // Mapeia os dados recebidos do back-end para o formato do PieChart
+      const chartData: PieChartDataItem[] = items.map((item, index) => ({
+        name: item.itemName,
+        population: item.totalQuantity,
+        color: colors[index % colors.length],
+        legendFontColor: '#7F7F7F',
+        legendFontSize: 12,
+      }));
 
-      const metaMensal = 100; 
-      const percentage = Math.min(100, (totalQuantity / metaMensal) * 100);
+      setWasteTypeData(chartData);
 
-      setPercentageCollected(percentage);
     } catch (error) {
       console.error("Erro ao buscar itens coletados para gráfico:", error);
-      setPercentageCollected(0);
+      setWasteTypeData([]);
     } finally {
       setLoadingGraph(false);
     }
   };
 
   useEffect(() => {
-    fetchCollectedItemsForGraph();
+    // Busca os dados do gráfico quando o componente é montado
+    fetchWasteTypeDistribution();
   }, []);
+
   const openStatusModal = () => {
     setIsStatusModalVisible(true);
     fetchCollectStatus();
@@ -154,7 +136,6 @@ useEffect(() => {
           <Icon name="cog" size={20} color="#555" />
         </TouchableOpacity>
       </View>
-
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity
@@ -192,21 +173,32 @@ useEffect(() => {
         </TouchableOpacity>
       </View>
 
-      {/* Gráfico circular da contribuição */}
+      {/* Gráfico de pizza com a distribuição dos resíduos */}
       <View style={styles.graphContainer}>
-        <Text style={styles.graphTitle}>Sua Contribuição de Reciclagem Este Mês</Text>
-        <View style={{ alignItems: "center" }}>
-          {loadingGraph ? (
+        <Text style={styles.graphTitle}>Distribuição dos Resíduos Coletados</Text>
+        {loadingGraph ? (
             <ActivityIndicator size="large" color="#30B7B0" />
-          ) : (
-            <>
-              <CircularProgress percentage={percentageCollected} />
-              <Text style={styles.graphPercentage}>
-                {percentageCollected.toFixed(0)}%
-              </Text>
-            </>
-          )}
-        </View>
+        ) : (
+            wasteTypeData.length > 0 ? (
+                <PieChart
+                    data={wasteTypeData}
+                    width={screenWidth - 40}
+                    height={220}
+                    chartConfig={{
+                        backgroundColor: '#fff',
+                        backgroundGradientFrom: '#fff',
+                        backgroundGradientTo: '#fff',
+                        color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                    }}
+                    accessor="population"
+                    backgroundColor="transparent"
+                    paddingLeft="15"
+                    absolute
+                />
+            ) : (
+                <Text style={styles.noDataText}>Nenhum dado de coleta neste mês.</Text>
+            )
+        )}
       </View>
 
       {/* Modal - Guia de Reciclagem */}
@@ -406,12 +398,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
-  graphPercentage: {
-    position: "absolute",
-    top: 35,
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
+  noDataText: {
+    textAlign: 'center',
+    color: '#666',
+    marginTop: 20,
   },
   modalBackground: {
     flex: 1,
