@@ -31,6 +31,11 @@ export async function loginUser(data: LoginPayload): Promise<LoginResponse> {
   return response.data;
 }
 
+export async function getALLUsers(){
+  const response = await api.get("/api/users/all");
+  return response.data;
+}
+
 export async function getUser(userId: string){
     const response = await api.get(`api/users/${userId}`);
   return response.data;
@@ -51,4 +56,5 @@ export default {
   registerUser,
   loginUser,
   getUser,
+  getALLUsers,
 }

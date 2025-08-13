@@ -63,18 +63,14 @@ export function CollectionsScreen() {
             const newStatus = item.collected === 'true' ? 'false' : 'true';
             const updatedItem = { ...item, collected: newStatus };
             
-            // Otimização: atualiza a lista localmente para uma resposta mais rápida
             const updatedAllCollections = allCollections.map(c => 
                 c.id === item.id ? updatedItem : c
             );
             setAllCollections(updatedAllCollections);
             
-            // Converte collected para boolean antes de enviar para o serviço
             await CollectService.updateCollect(item.id, { ...updatedItem, collected: newStatus === 'true' });
             
-            // Removido o fetchCollections completo, pois a lista local já foi atualizada
         } catch (error) {
-            // Se houver erro, reverta a alteração local
             setAllCollections(allCollections); 
             Alert.alert('Erro', 'Não foi possível atualizar o status da coleta.');
             console.error(error);
