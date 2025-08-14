@@ -69,15 +69,9 @@ export default function SolicitaColeta() {
 try {
   const collectPayload = {
     collected: false,
-    collecteDate: dataColeta.toISOString().split("T")[0],
+    collectDate: dataColeta.toISOString().split("T")[0],
   };
 
-  const collectResponse = await CollectService.createCollect(collectPayload);
-  const collectId = collectResponse.id;
-
-  if (!collectId) {
-    throw new Error("ID da coleta não foi retornado pelo backend.");
-  }
 
     const UserId = await AsyncStorage.getItem('userId');
 
@@ -89,7 +83,7 @@ try {
       itemName: nomeItem,
       itemDescription: `Resíduo do tipo ${nomeItem}`,
       quantity: 1,
-      collecteDate: dataColeta.toISOString().split("T")[0],
+      collectDate: dataColeta.toISOString().split("T")[0],
       collected: false,
       user: user, 
     };

@@ -11,7 +11,7 @@ export interface WasteDistribution {
 export interface Collect {
   id?: number;
   collected: boolean;
-  collecteDate: string; 
+  collectDate: string; 
   itemName?: string;
   itemDescription?: string;
   quantity?: number;
