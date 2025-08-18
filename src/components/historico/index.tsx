@@ -64,53 +64,50 @@ export function HistoricoScreen() {
         fetchAllCollections();
     }, []);
 
-    // Efeito para processar os dados sempre que o filtro mudar
     useEffect(() => {
         processData(filteredCollections);
     }, [filteredCollections]);
 
-    const handleFilterByDate = () => {
-        const dateFormatRegex = /^\d{2}\/\d{2}\/\d{4}$/;
-        
-        if (!startDate || !endDate) {
-            Alert.alert('Atenção', 'Preencha as duas datas para filtrar.');
-            return;
-        }
+   const handleFilterByDate = () => {
+    const dateFormatRegex = /^\d{2}\/\d{2}\/\d{4}$/;
 
-        if (!dateFormatRegex.test(startDate) || !dateFormatRegex.test(endDate)) {
-            Alert.alert('Atenção', 'O formato da data deve ser DD/MM/AAAA.');
-            return;
-        }
+    if (!startDate || !endDate) {
+        Alert.alert('Atenção', 'Preencha as duas datas para filtrar.');
+        return;
+    }
 
-        const [startDay, startMonth, startYear] = startDate.split('/').map(Number);
-        const [endDay, endMonth, endYear] = endDate.split('/').map(Number);
-        
-        // Criação robusta dos objetos Date com os componentes numéricos
-        const start = new Date(startYear, startMonth - 1, startDay);
-        const end = new Date(endYear, endMonth - 1, endDay);
-        // Para garantir que o filtro inclui o último dia, adicione 1 dia à data final
-        // e subtraia 1 milissegundo para pegar o último momento do dia.
-        // Isso é uma boa prática para filtros de data que não consideram a hora.
-        end.setDate(end.getDate() + 1);
-        end.setMilliseconds(end.getMilliseconds() - 1);
+    if (!dateFormatRegex.test(startDate) || !dateFormatRegex.test(endDate)) {
+        Alert.alert('Atenção', 'O formato da data deve ser DD/MM/AAAA.');
+        return;
+    }
 
-        if (start > end) {
-            Alert.alert('Atenção', 'A data de início não pode ser posterior à data de fim.');
-            return;
-        }
+    const [startDay, startMonth, startYear] = startDate.split('/').map(Number);
+    const [endDay, endMonth, endYear] = endDate.split('/').map(Number);
 
-        const filtered = allCollections.filter(item => {
-            // O formato do backend (YYYY-MM-DD) é facilmente interpretado pelo new Date()
-            const itemDate = new Date(item.collectDate);
-            return itemDate >= start && itemDate <= end;
-        });
+    // Criar datas no fuso local
+    const start = new Date(startYear, startMonth - 1, startDay, 0, 0, 0);
+    const end = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
 
-        if (filtered.length === 0) {
-            Alert.alert('Aviso', 'Nenhuma coleta encontrada no período selecionado.');
-        }
+    if (start > end) {
+        Alert.alert('Atenção', 'A data de início não pode ser posterior à data de fim.');
+        return;
+    }
 
-        setFilteredCollections(filtered);
-    };
+    const filtered = allCollections.filter(item => {
+        // Converte 'YYYY-MM-DD' para data local (sem fuso UTC)
+        const [year, month, day] = item.collectDate.split('-').map(Number);
+        const itemDate = new Date(year, month - 1, day, 0, 0, 0);
+
+        return itemDate >= start && itemDate <= end;
+    });
+
+    if (filtered.length === 0) {
+        Alert.alert('Aviso', 'Nenhuma coleta encontrada no período selecionado.');
+    }
+
+    setFilteredCollections(filtered);
+};
+
 
     const processData = (data: CollectionRequest[]) => {
         // Lógica para contar requisições por bairro

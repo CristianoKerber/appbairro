@@ -50,7 +50,7 @@ const getLatestCollectStatus = async (): Promise<Collect | null> => {
 // NOVO: Busca os dados de distribuição para o gráfico
 const getTotalCollectedInMonth = async (): Promise<WasteDistribution[]> => {
   try {
-    const response = await api.get<WasteDistribution[]>("/api/collects/monthlyDistribution");
+    const response = await api.get<WasteDistribution[]>('/api/collects/monthlyDistribution/${userId}');
     return response.data;
   } catch (error) {
     console.error("Erro ao buscar dados de distribuição:", error);

@@ -1,4 +1,5 @@
 import CollectService from "@/service/CollectService";
+import UserService from "@/service/UserService";
 import { RootStackParamList } from "@/types/navigation";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from "@react-navigation/native";
@@ -34,7 +35,7 @@ interface PieChartDataItem {
   legendFontSize: number;
 }
 
-const Dashboard = () => {
+const Dashboard = async () => {
   // Estado dos modais
   const [isInfoVisible, setIsInfoVisible] = useState(false);
   const [isStatusModalVisible, setIsStatusModalVisible] = useState(false);
@@ -82,10 +83,13 @@ const Dashboard = () => {
     }
   };
 
+  const UserId =  AsyncStorage.getItem('userId');
+  const user = await UserService.getUser(UserId as string);
+  
   const fetchWasteTypeDistribution = async () => {
     setLoadingGraph(true);
     try {
-      const items = await CollectService.getTotalCollectedInMonth();
+      const items = await CollectService.getTotalCollectedInMonth(UserId);
 
       const colors = ['#00BCD4', '#FFC107', '#2196F3', '#4CAF50', '#9C27B0', '#F44336'];
       // Mapeia os dados recebidos do back-end para o formato do PieChart
@@ -108,7 +112,6 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    // Busca os dados do gráfico quando o componente é montado
     fetchWasteTypeDistribution();
   }, []);
 

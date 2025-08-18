@@ -48,7 +48,7 @@ export function CollectionsScreen() {
         if (selectedFilter === 'all') {
             setFilteredCollections(collectionsToFilter);
         } else if (selectedFilter === 'pending') {
-            setFilteredCollections(collectionsToFilter.filter(item => item.collected === 'false'));
+            setFilteredCollections(collectionsToFilter.filter(item => item.collected === 'false' ));
         } else if (selectedFilter === 'collected') {
             setFilteredCollections(collectionsToFilter.filter(item => item.collected === 'true'));
         }
