@@ -28,11 +28,13 @@ export default function SolicitaColeta() {
   const [endereco, setEndereco] = useState("Rua dos Recicláveis, 456");
   const [dataColeta, setDataColeta] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [residuosSelecionados, setResiduosSelecionados] = useState<string[]>([]);
+  const [residuosSelecionados, setResiduosSelecionados] = useState<string[]>(
+    []
+  );
 
   const tiposResiduos = [
     { nome: "Papel", icon: "file-alt", cor: "#2aa7b7" },
-    { nome: "Plástico", icon: "recycle", cor: "#4caf50" }, 
+    { nome: "Plástico", icon: "recycle", cor: "#4caf50" },
     { nome: "Vidro", icon: "wine-bottle", cor: "#2196f3" },
     { nome: "Metal", icon: "cogs", cor: "#7a9e4c" },
   ];
@@ -55,7 +57,7 @@ export default function SolicitaColeta() {
 
   const showDatepicker = () => {
     setShowDatePicker(true);
-  };
+  };  
 
   const formatarData = (date: Date) => {
     return date.toLocaleDateString("pt-BR");
@@ -63,45 +65,47 @@ export default function SolicitaColeta() {
 
   const handleAgendarColeta = async () => {
     if (isButtonDisabled) {
-      alert("Por favor, selecione pelo menos um tipo de resíduo para agendar a coleta.");
+      alert(
+        "Por favor, selecione pelo menos um tipo de resíduo para agendar a coleta."
+      );
       return;
     }
-try {
-  const collectPayload = {
-    collected: false,
-    collectDate: dataColeta.toISOString().split("T")[0],
-  };
+    try {
+      const collectPayload = {
+        collected: false,
+        collectDate: dataColeta.toISOString().split("T")[0],
+      };
 
+      const UserId = await AsyncStorage.getItem("userId");
 
-    const UserId = await AsyncStorage.getItem('userId');
+      const user = await UserService.getUser(UserId as string);
 
-    const user = await UserService.getUser(UserId as string);
-  
-  console.log("ID do usuário:", UserId); 
-  for (const nomeItem of residuosSelecionados) {
-    const collectedPayload = {
-      itemName: nomeItem,
-      itemDescription: `Resíduo do tipo ${nomeItem}`,
-      quantity: 1,
-      collectDate: dataColeta.toISOString().split("T")[0],
-      collected: false,
-      user: user, 
-    };
+      console.log("ID do usuário:", UserId);
+      for (const nomeItem of residuosSelecionados) {
+        const collectedPayload = {
+          itemName: nomeItem,
+          itemDescription: `Resíduo do tipo ${nomeItem}`,
+          quantity: 1,
+          collectDate: dataColeta.toISOString().split("T")[0],
+          collected: false,
+          user: user,
+        };
 
-    await CollectService.createCollect(collectedPayload);
-  }
+        await CollectService.createCollect(collectedPayload);
+      }
 
-  alert(
-    `Coleta agendada para ${formatarData(dataColeta)} no endereço ${endereco} com os resíduos: ${residuosSelecionados.join(
-      ", "
-    )}.`
-  );
-  navigator.replace("Dashboard");
-} catch (error) {
-  console.error("Erro ao agendar coleta:", error);
-  alert("Erro ao agendar a coleta. Tente novamente.");
-}
-
+      alert(
+        `Coleta agendada para ${formatarData(
+          dataColeta
+        )} no endereço ${endereco} com os resíduos: ${residuosSelecionados.join(
+          ", "
+        )}.`
+      );
+      navigator.replace("Dashboard");
+    } catch (error) {
+      console.error("Erro ao agendar coleta:", error);
+      alert("Erro ao agendar a coleta. Tente novamente.");
+    }
   };
 
   useEffect(() => {

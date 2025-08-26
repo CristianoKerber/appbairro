@@ -1,7 +1,8 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 import CollectService from "@/service/CollectService";
 import UserService from "@/service/UserService";
 import { RootStackParamList } from "@/types/navigation";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useEffect, useState } from "react";
@@ -14,9 +15,9 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
-import { PieChart } from 'react-native-chart-kit';
+import { PieChart } from "react-native-chart-kit";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
 type DashboardNavigationProp = NativeStackNavigationProp<
@@ -26,7 +27,6 @@ type DashboardNavigationProp = NativeStackNavigationProp<
 
 const screenWidth = Dimensions.get("window").width;
 
-// Define o tipo de dado esperado pelo gráfico de pizza
 interface PieChartDataItem {
   name: string;
   population: number;
@@ -37,6 +37,7 @@ interface PieChartDataItem {
 
 const Dashboard = async () => {
   // Estado dos modais
+
   const [isInfoVisible, setIsInfoVisible] = useState(false);
   const [isStatusModalVisible, setIsStatusModalVisible] = useState(false);
 
@@ -50,7 +51,7 @@ const Dashboard = async () => {
   const [wasteTypeData, setWasteTypeData] = useState<PieChartDataItem[]>([]);
 
   const navigation = useNavigation<DashboardNavigationProp>();
-  const [userName, setUserName] = useState('');
+  const [userName, setUserName] = useState("");
 
   // Busca o nome do usuário armazenado localmente
   useEffect(() => {
@@ -83,26 +84,32 @@ const Dashboard = async () => {
     }
   };
 
-  const UserId =  AsyncStorage.getItem('userId');
-  const user = await UserService.getUser(UserId as string);
-  
+  const UserId = AsyncStorage.getItem("userId");
+  const user = await UserService.getUser(UserId as unknown as string);
+
   const fetchWasteTypeDistribution = async () => {
     setLoadingGraph(true);
     try {
       const items = await CollectService.getTotalCollectedInMonth(UserId);
 
-      const colors = ['#00BCD4', '#FFC107', '#2196F3', '#4CAF50', '#9C27B0', '#F44336'];
+      const colors = [
+        "#00BCD4",
+        "#FFC107",
+        "#2196F3",
+        "#4CAF50",
+        "#9C27B0",
+        "#F44336",
+      ];
       // Mapeia os dados recebidos do back-end para o formato do PieChart
       const chartData: PieChartDataItem[] = items.map((item, index) => ({
         name: item.itemName,
         population: item.totalQuantity,
         color: colors[index % colors.length],
-        legendFontColor: '#7F7F7F',
+        legendFontColor: "#7F7F7F",
         legendFontSize: 12,
       }));
 
       setWasteTypeData(chartData);
-
     } catch (error) {
       console.error("Erro ao buscar itens coletados para gráfico:", error);
       setWasteTypeData([]);
@@ -164,7 +171,9 @@ const Dashboard = async () => {
           onPress={() => setIsInfoVisible(true)}
         >
           <Icon name="recycle" size={24} color="#fff" />
-          <Text style={styles.buttonText}>Informações{"\n"}sobre Reciclagem</Text>
+          <Text style={styles.buttonText}>
+            Informações{"\n"}sobre Reciclagem
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -172,35 +181,39 @@ const Dashboard = async () => {
           onPress={() => console.log("Participar do Jardim Comunitário")}
         >
           <Icon name="sprout" size={24} color="#fff" />
-          <Text style={styles.buttonText}>Participar do{"\n"}Jardim Comunitário</Text>
+          <Text style={styles.buttonText}>
+            Participar do{"\n"}Jardim Comunitário
+          </Text>
         </TouchableOpacity>
       </View>
 
       {/* Gráfico de pizza com a distribuição dos resíduos */}
       <View style={styles.graphContainer}>
-        <Text style={styles.graphTitle}>Distribuição dos Resíduos Coletados</Text>
+        <Text style={styles.graphTitle}>
+          Distribuição dos Resíduos Coletados
+        </Text>
         {loadingGraph ? (
-            <ActivityIndicator size="large" color="#30B7B0" />
+          <ActivityIndicator size="large" color="#30B7B0" />
+        ) : wasteTypeData.length > 0 ? (
+          <PieChart
+            data={wasteTypeData}
+            width={screenWidth - 40}
+            height={220}
+            chartConfig={{
+              backgroundColor: "#fff",
+              backgroundGradientFrom: "#fff",
+              backgroundGradientTo: "#fff",
+              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+            }}
+            accessor="population"
+            backgroundColor="transparent"
+            paddingLeft="15"
+            absolute
+          />
         ) : (
-            wasteTypeData.length > 0 ? (
-                <PieChart
-                    data={wasteTypeData}
-                    width={screenWidth - 40}
-                    height={220}
-                    chartConfig={{
-                        backgroundColor: '#fff',
-                        backgroundGradientFrom: '#fff',
-                        backgroundGradientTo: '#fff',
-                        color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                    }}
-                    accessor="population"
-                    backgroundColor="transparent"
-                    paddingLeft="15"
-                    absolute
-                />
-            ) : (
-                <Text style={styles.noDataText}>Nenhum dado de coleta neste mês.</Text>
-            )
+          <Text style={styles.noDataText}>
+            Nenhum dado de coleta neste mês.
+          </Text>
         )}
       </View>
 
@@ -214,7 +227,11 @@ const Dashboard = async () => {
         <View style={styles.modalBackground}>
           <View style={styles.modalContentEnfeitado}>
             <View style={styles.modalHeader}>
-              <Icon name="information-circle-outline" size={30} color="#2196F3" />
+              <Icon
+                name="information-circle-outline"
+                size={30}
+                color="#2196F3"
+              />
               <Text style={styles.modalTitleEnfeitado}>Guia de Reciclagem</Text>
             </View>
             <ScrollView style={styles.modalScrollView}>
@@ -227,9 +244,9 @@ const Dashboard = async () => {
                 />
                 <Text style={styles.sectionTitle}>Por Que Reciclar?</Text>
                 <Text style={styles.modalTextEnfeitado}>
-                  Reciclar é vital para nosso planeta, pois reduz a quantidade de
-                  lixo em aterros, economiza energia, conserva recursos naturais e
-                  gera empregos.
+                  Reciclar é vital para nosso planeta, pois reduz a quantidade
+                  de lixo em aterros, economiza energia, conserva recursos
+                  naturais e gera empregos.
                 </Text>
               </View>
 
@@ -242,16 +259,21 @@ const Dashboard = async () => {
                 />
                 <Text style={styles.sectionTitle}>Como Diferenciar?</Text>
                 <Text style={styles.modalTextEnfeitado}>
-                  • <Text style={{fontWeight:'bold'}}>Papel:</Text> Jornais, revistas,
-                  caixas de papelão limpas. Evite papel higiênico, fotos.
-                  {"\n"}• <Text style={{fontWeight:'bold'}}>Plástico:</Text> Garrafas PET,
-                  embalagens de produtos. Evite isopor em algumas regiões.
-                  {"\n"}• <Text style={{fontWeight:'bold'}}>Vidro:</Text> Garrafas,
-                  potes de alimentos. Evite espelhos, louças, lâmpadas.
-                  {"\n"}• <Text style={{fontWeight:'bold'}}>Metal:</Text> Latas de
-                  alumínio, panelas velhas. Evite pilhas, baterias, eletrônicos.
-                  {"\n"}• <Text style={{fontWeight:'bold'}}>Orgânico:</Text> Restos de
-                  alimentos, borra de café. Evite carnes e laticínios em compostagem doméstica.
+                  • <Text style={{ fontWeight: "bold" }}>Papel:</Text> Jornais,
+                  revistas, caixas de papelão limpas. Evite papel higiênico,
+                  fotos.
+                  {"\n"}• <Text style={{ fontWeight: "bold" }}>Plástico:</Text>{" "}
+                  Garrafas PET, embalagens de produtos. Evite isopor em algumas
+                  regiões.
+                  {"\n"}• <Text style={{ fontWeight: "bold" }}>Vidro:</Text>{" "}
+                  Garrafas, potes de alimentos. Evite espelhos, louças,
+                  lâmpadas.
+                  {"\n"}• <Text style={{ fontWeight: "bold" }}>Metal:</Text>{" "}
+                  Latas de alumínio, panelas velhas. Evite pilhas, baterias,
+                  eletrônicos.
+                  {"\n"}• <Text style={{ fontWeight: "bold" }}>Orgânico:</Text>{" "}
+                  Restos de alimentos, borra de café. Evite carnes e laticínios
+                  em compostagem doméstica.
                 </Text>
               </View>
 
@@ -264,18 +286,29 @@ const Dashboard = async () => {
                 />
                 <Text style={styles.sectionTitle}>Modo de Separar</Text>
                 <Text style={styles.modalTextEnfeitado}>
-                  1. <Text style={{fontWeight:'bold'}}>Separe por tipo:</Text> Tenha
-                  lixeiras para cada categoria (papel, plástico, vidro, metal,
-                  orgânico).
-                  {"\n"}2. <Text style={{fontWeight:'bold'}}>Limpe e Seque:</Text> Lave
-                  embalagens plásticas e de vidro. Papel e papelão devem estar secos.
-                  {"\n"}3. <Text style={{fontWeight:'bold'}}>Amasse e Compacte:</Text>
+                  1.{" "}
+                  <Text style={{ fontWeight: "bold" }}>Separe por tipo:</Text>{" "}
+                  Tenha lixeiras para cada categoria (papel, plástico, vidro,
+                  metal, orgânico).
+                  {"\n"}2.{" "}
+                  <Text style={{ fontWeight: "bold" }}>Limpe e Seque:</Text>{" "}
+                  Lave embalagens plásticas e de vidro. Papel e papelão devem
+                  estar secos.
+                  {"\n"}3.{" "}
+                  <Text style={{ fontWeight: "bold" }}>Amasse e Compacte:</Text>
                   Reduza o volume de latas e garrafas para economizar espaço.
-                  {"\n"}4. <Text style={{fontWeight:'bold'}}>Cuidado com o Vidro:</Text>{" "}
+                  {"\n"}4.{" "}
+                  <Text style={{ fontWeight: "bold" }}>
+                    Cuidado com o Vidro:
+                  </Text>{" "}
                   Embale vidros quebrados em jornais ou caixas para segurança.
-                  {"\n"}5. <Text style={{fontWeight:'bold'}}>Descarte o Orgânico Separadamente:</Text>{" "}
+                  {"\n"}5.{" "}
+                  <Text style={{ fontWeight: "bold" }}>
+                    Descarte o Orgânico Separadamente:
+                  </Text>{" "}
                   Nunca misture com recicláveis secos.
-                  {"\n"}6. <Text style={{fontWeight:'bold'}}>Ponto de Coleta:</Text>{" "}
+                  {"\n"}6.{" "}
+                  <Text style={{ fontWeight: "bold" }}>Ponto de Coleta:</Text>{" "}
                   Verifique a coleta seletiva da sua região ou leve a um PEV.
                 </Text>
               </View>
@@ -309,7 +342,9 @@ const Dashboard = async () => {
                 <ActivityIndicator size="large" color="#30B7B0" />
               ) : (
                 <>
-                  <Text style={{ fontSize: 16, marginTop: 10, fontWeight: "bold" }}>
+                  <Text
+                    style={{ fontSize: 16, marginTop: 10, fontWeight: "bold" }}
+                  >
                     Sua coleta está
                   </Text>
                   <Text
@@ -322,7 +357,13 @@ const Dashboard = async () => {
                   >
                     {collectStatus}
                   </Text>
-                  <Text style={{ marginTop: 10, textAlign: "center", color: "#777" }}>
+                  <Text
+                    style={{
+                      marginTop: 10,
+                      textAlign: "center",
+                      color: "#777",
+                    }}
+                  >
                     {collectStatus === "Aguardando Confirmação!"
                       ? "Você receberá uma notificação quando a coleta for confirmada."
                       : ""}
@@ -330,7 +371,10 @@ const Dashboard = async () => {
                 </>
               )}
             </View>
-            <Button title="Fechar" onPress={() => setIsStatusModalVisible(false)} />
+            <Button
+              title="Fechar"
+              onPress={() => setIsStatusModalVisible(false)}
+            />
           </View>
         </View>
       </Modal>
@@ -393,52 +437,52 @@ const styles = StyleSheet.create({
   graphContainer: {
     marginTop: 20,
     alignItems: "center",
-    width: '100%',
+    width: "100%",
   },
   graphTitle: {
     fontSize: 16,
     marginBottom: 10,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
   },
   noDataText: {
-    textAlign: 'center',
-    color: '#666',
+    textAlign: "center",
+    color: "#666",
     marginTop: 20,
   },
   modalBackground: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContentEnfeitado: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     padding: 20,
     borderRadius: 15,
-    alignItems: 'center',
+    alignItems: "center",
     elevation: 10,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
-    width: '85%',
+    width: "85%",
     maxWidth: 450,
   },
   modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 15,
   },
   modalTitleEnfeitado: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginLeft: 10,
   },
   modalScrollView: {
     maxHeight: 300,
     marginBottom: 15,
-    width: '100%',
+    width: "100%",
   },
   modalSection: {
     marginBottom: 15,
@@ -446,17 +490,17 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 5,
-    color: '#333',
+    color: "#333",
   },
   sectionIcon: {
     marginRight: 5,
   },
   modalTextEnfeitado: {
     fontSize: 14,
-    color: '#555',
-    textAlign: 'left',
+    color: "#555",
+    textAlign: "left",
   },
 });
 
