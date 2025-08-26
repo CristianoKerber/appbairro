@@ -1,6 +1,4 @@
-/* eslint-disable react-hooks/rules-of-hooks */
 import CollectService from "@/service/CollectService";
-import UserService from "@/service/UserService";
 import { RootStackParamList } from "@/types/navigation";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
@@ -35,9 +33,8 @@ interface PieChartDataItem {
   legendFontSize: number;
 }
 
-const Dashboard = async () => {
+const Dashboard = () => {
   // Estado dos modais
-
   const [isInfoVisible, setIsInfoVisible] = useState(false);
   const [isStatusModalVisible, setIsStatusModalVisible] = useState(false);
 
@@ -47,20 +44,31 @@ const Dashboard = async () => {
 
   // Estado do gráfico
   const [loadingGraph, setLoadingGraph] = useState(false);
-  // AQUI ESTÁ A CORREÇÃO: Definimos explicitamente o tipo do array
   const [wasteTypeData, setWasteTypeData] = useState<PieChartDataItem[]>([]);
 
   const navigation = useNavigation<DashboardNavigationProp>();
   const [userName, setUserName] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
 
-  // Busca o nome do usuário armazenado localmente
+  // useEffect para buscar o ID do usuário e, em seguida, buscar os dados
   useEffect(() => {
-    const fetchUserName = async () => {
-      const name = await AsyncStorage.getItem("userName");
-      if (name) setUserName(name);
+    const getUserIdAndFetchData = async () => {
+      // Obtém o userId de forma assíncrona
+      const id = await AsyncStorage.getItem("userId");
+      setUserId(id);
+
+      if (id) {
+        // Busca o nome do usuário armazenado localmente
+        const name = await AsyncStorage.getItem("userName");
+        if (name) setUserName(name);
+
+        // AQUI: Chama a função que busca dados do gráfico, passando o ID do usuário
+        fetchWasteTypeDistribution(id);
+      }
     };
-    fetchUserName();
-  }, []);
+
+    getUserIdAndFetchData();
+  }, []); // Array de dependências vazio, roda apenas uma vez ao montar o componente
 
   // Função para buscar status da coleta
   const fetchCollectStatus = async () => {
@@ -84,13 +92,12 @@ const Dashboard = async () => {
     }
   };
 
-  const UserId = AsyncStorage.getItem("userId");
-  const user = await UserService.getUser(UserId as unknown as string);
-
-  const fetchWasteTypeDistribution = async () => {
+  // Esta função agora recebe o ID do usuário como parâmetro
+  const fetchWasteTypeDistribution = async (id: string) => {
     setLoadingGraph(true);
     try {
-      const items = await CollectService.getTotalCollectedInMonth(UserId);
+      // AQUI: A função do serviço recebe o ID para filtrar os dados
+      const items = await CollectService.getTotalCollectedInMonth();
 
       const colors = [
         "#00BCD4",
@@ -100,7 +107,6 @@ const Dashboard = async () => {
         "#9C27B0",
         "#F44336",
       ];
-      // Mapeia os dados recebidos do back-end para o formato do PieChart
       const chartData: PieChartDataItem[] = items.map((item, index) => ({
         name: item.itemName,
         population: item.totalQuantity,
@@ -117,10 +123,6 @@ const Dashboard = async () => {
       setLoadingGraph(false);
     }
   };
-
-  useEffect(() => {
-    fetchWasteTypeDistribution();
-  }, []);
 
   const openStatusModal = () => {
     setIsStatusModalVisible(true);
@@ -153,7 +155,9 @@ const Dashboard = async () => {
           onPress={() => navigation.navigate("SolicitaColeta")}
         >
           <Icon name="delete" size={24} color="#fff" />
-          <Text style={styles.buttonText}>Solicitar{"\n"}Coleta</Text>
+          <Text style={styles.buttonText}>
+            Solicitar{"\n"}Coleta
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -204,11 +208,12 @@ const Dashboard = async () => {
               backgroundGradientFrom: "#fff",
               backgroundGradientTo: "#fff",
               color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              paddingRight: screenWidth * 0.25,
             }}
             accessor="population"
             backgroundColor="transparent"
             paddingLeft="15"
-            absolute
+            
           />
         ) : (
           <Text style={styles.noDataText}>

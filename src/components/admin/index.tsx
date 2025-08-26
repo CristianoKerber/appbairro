@@ -13,62 +13,59 @@ import {
 } from "react-native";
 import { PieChart } from "react-native-chart-kit";
 
-// Define o tipo de navegação para a tela AdminDashboard
 type AdminDashboardNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   "AdminDashboard"
 >;
 
-// Obtém a largura da tela para ajustar o layout de forma responsiva
 const screenWidth = Dimensions.get("window").width;
 const isMobile = screenWidth < 768;
 
-// Interface para o item de coleta
-// A API retorna um formato ligeiramente diferente agora
-interface MonthlyDistributionItem {
+interface ApiDataItem {
   itemName: string;
-  totalQuantity: number;
+  itemDescription: string;
+  quantity: number;
 }
 
-// O componente principal do Dashboard do Administrador
+interface ChartDataItem {
+  name: string;
+  population: number;
+  color: string;
+  legendFontColor: string;
+  legendFontSize: number;
+}
+
 export function AdminDashboard() {
   const navigation = useNavigation<AdminDashboardNavigationProp>();
-  // Estado para os dados do gráfico
-  const [chartData, setChartData] = useState<
-    {
-      name: string;
-      population: number;
-      color: string;
-      legendFontColor: string;
-      legendFontSize: number;
-    }[]
-  >([]);
-  // Estado para controlar o carregamento dos dados
+
+  const [chartData, setChartData] = useState<ChartDataItem[]>([]);
   const [loading, setLoading] = useState(true);
-  // Estado para o tratamento de erros (substitui o Alert.alert)
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    const fetchChartData = async () => {
+    const fetchAllCollections = async () => {
       try {
-        const response = await CollectService.getAllCollects();
+        setLoading(true);
 
-        if (!response.ok) {
-          throw new Error(`Falha na busca de dados: ${response.statusText}`);
-        }
+        const apiData: ApiDataItem[] = await CollectService.getAllCollects();
 
-        const data: MonthlyDistributionItem[] = await response.json();
-        console.log("Dados recebidos da API:", data);
+        // Agrupa os dados por itemName e soma as quantidades
+        const groupedData: { [key: string]: number } = apiData.reduce((acc, item) => {
+          const quantity = typeof item.quantity === 'number' && !isNaN(item.quantity) ? item.quantity : 0;
+          acc[item.itemName] = (acc[item.itemName] || 0) + quantity;
+          return acc;
+        }, {} as { [key: string]: number });
 
         // Gera uma paleta de cores dinamicamente para o gráfico
         const generateColor = () =>
           `#${Math.floor(Math.random() * 16777215).toString(16)}`;
 
-        const formattedData = data.map((item) => {
+        // Formata os dados agrupados para o formato esperado pelo PieChart
+        const formattedData: ChartDataItem[] = Object.keys(groupedData).map((key) => {
           return {
-            name: item.itemName,
-            population: item.totalQuantity,
-            color: generateColor(), // Cor gerada dinamicamente
+            name: key,
+            population: groupedData[key],
+            color: generateColor(),
             legendFontColor: "#7F7F7F",
             legendFontSize: 15,
           };
@@ -76,7 +73,6 @@ export function AdminDashboard() {
 
         setChartData(formattedData);
       } catch (error) {
-        // Tratamento de erro aprimorado
         const message =
           error instanceof Error ? error.message : "Erro desconhecido.";
         setErrorMessage(
@@ -88,14 +84,13 @@ export function AdminDashboard() {
       }
     };
 
-    fetchChartData();
-  }, []); // O array de dependências vazio garante que a função é executada apenas uma vez
+    fetchAllCollections();
+  }, []);
 
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Reciclo Admin</Text>
 
-      {/* Exibe mensagem de erro se houver uma */}
       {errorMessage ? (
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{errorMessage}</Text>
@@ -108,7 +103,6 @@ export function AdminDashboard() {
         </View>
       ) : null}
 
-      {/* Layout responsivo para telas maiores e menores */}
       <View style={isMobile ? styles.contentMobile : styles.contentDesktop}>
         <View
           style={
@@ -181,17 +175,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: "#2c3e50",
   },
-  // Estilos para layout desktop (side-by-side)
   contentDesktop: {
     flexDirection: "row",
     flex: 1,
   },
-  // Estilos para layout mobile (column-based)
   contentMobile: {
     flexDirection: "column",
     flex: 1,
   },
-  // Estilos para menu desktop
   menuContainerDesktop: {
     width: "30%",
     marginRight: 20,
@@ -203,8 +194,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    height: "auto",
   },
-  // Estilos para menu mobile
   menuContainerMobile: {
     width: "100%",
     marginBottom: 20,
@@ -240,7 +231,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start",
+    marginTop: 20,
   },
   chartTitle: {
     fontSize: 20,

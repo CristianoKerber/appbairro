@@ -38,7 +38,6 @@ export function HistoricoScreen() {
         legendFontSize: number;
     }[]>([]);
 
-    // Efeito para buscar os dados do backend
     useEffect(() => {
         const fetchAllCollections = async () => {
             try {
