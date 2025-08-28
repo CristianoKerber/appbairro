@@ -1,7 +1,10 @@
 import CollectService from '@/service/CollectService';
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Dimensions, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -17,7 +20,19 @@ interface CollectionRequest {
     collectDate: string; // Formato yyyy-MM-dd
 }
 
+type HistoricoScreenNavigationProp = NativeStackNavigationProp<any, "HistoricoScreen">;
+
+// Objeto para armazenar as cores geradas para cada bairro
+const bairroColors: Record<string, string> = {};
+
+// Função para gerar uma cor hexadecimal aleatória
+const generateRandomColor = () => {
+    const randomColor = Math.floor(Math.random() * 16777215).toString(16);
+    return `#${randomColor.padStart(6, '0')}`;
+};
+
 export function HistoricoScreen() {
+    const navigation = useNavigation<HistoricoScreenNavigationProp>();
     const [allCollections, setAllCollections] = useState<CollectionRequest[]>([]);
     const [filteredCollections, setFilteredCollections] = useState<CollectionRequest[]>([]);
     const [loading, setLoading] = useState(true);
@@ -42,7 +57,7 @@ export function HistoricoScreen() {
         const fetchAllCollections = async () => {
             try {
                 setLoading(true);
-                const data: CollectionRequest[] = await CollectService.getAllCollects(); 
+                const data: CollectionRequest[] = await CollectService.getAllCollects();
 
                 if (!data || data.length === 0) {
                     Alert.alert('Aviso', 'Nenhum dado de histórico de coletas encontrado.');
@@ -54,7 +69,7 @@ export function HistoricoScreen() {
                 setAllCollections(data);
                 setFilteredCollections(data); // Inicialmente mostra todos
             } catch (error) {
-                Alert.alert('Erro', 'Não foi possível carregar os dados de histórico. Verifique o servidor e o serviço de coletas.');
+                Alert.alert('Erro', 'Não foi possível carregar os dados de histórico.');
                 console.error('Erro ao buscar dados:', error);
             } finally {
                 setLoading(false);
@@ -67,70 +82,68 @@ export function HistoricoScreen() {
         processData(filteredCollections);
     }, [filteredCollections]);
 
-   const handleFilterByDate = () => {
-    const dateFormatRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+    const handleFilterByDate = () => {
+        const dateFormatRegex = /^\d{2}\/\d{2}\/\d{4}$/;
 
-    if (!startDate || !endDate) {
-        Alert.alert('Atenção', 'Preencha as duas datas para filtrar.');
-        return;
-    }
+        if (!startDate || !endDate) {
+            Alert.alert('Atenção', 'Preencha as duas datas para filtrar.');
+            return;
+        }
 
-    if (!dateFormatRegex.test(startDate) || !dateFormatRegex.test(endDate)) {
-        Alert.alert('Atenção', 'O formato da data deve ser DD/MM/AAAA.');
-        return;
-    }
+        if (!dateFormatRegex.test(startDate) || !dateFormatRegex.test(endDate)) {
+            Alert.alert('Atenção', 'O formato da data deve ser DD/MM/AAAA.');
+            return;
+        }
 
-    const [startDay, startMonth, startYear] = startDate.split('/').map(Number);
-    const [endDay, endMonth, endYear] = endDate.split('/').map(Number);
+        const [startDay, startMonth, startYear] = startDate.split('/').map(Number);
+        const [endDay, endMonth, endYear] = endDate.split('/').map(Number);
 
-    // Criar datas no fuso local
-    const start = new Date(startYear, startMonth - 1, startDay, 0, 0, 0);
-    const end = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
+        const start = new Date(startYear, startMonth - 1, startDay, 0, 0, 0);
+        const end = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
 
-    if (start > end) {
-        Alert.alert('Atenção', 'A data de início não pode ser posterior à data de fim.');
-        return;
-    }
+        if (start > end) {
+            Alert.alert('Atenção', 'A data de início não pode ser posterior à data de fim.');
+            return;
+        }
 
-    const filtered = allCollections.filter(item => {
-        // Converte 'YYYY-MM-DD' para data local (sem fuso UTC)
-        const [year, month, day] = item.collectDate.split('-').map(Number);
-        const itemDate = new Date(year, month - 1, day, 0, 0, 0);
+        const filtered = allCollections.filter(item => {
+            const [year, month, day] = item.collectDate.split('-').map(Number);
+            const itemDate = new Date(year, month - 1, day, 0, 0, 0);
 
-        return itemDate >= start && itemDate <= end;
-    });
+            return itemDate >= start && itemDate <= end;
+        });
 
-    if (filtered.length === 0) {
-        Alert.alert('Aviso', 'Nenhuma coleta encontrada no período selecionado.');
-    }
+        if (filtered.length === 0) {
+            Alert.alert('Aviso', 'Nenhuma coleta encontrada no período selecionado.');
+        }
 
-    setFilteredCollections(filtered);
-};
-
+        setFilteredCollections(filtered);
+    };
 
     const processData = (data: CollectionRequest[]) => {
         // Lógica para contar requisições por bairro
         const bairros = data.reduce<Record<string, number>>((acc, item) => {
             if (item.user?.address) {
-                // Tenta extrair o bairro como a segunda parte do endereço, após a primeira vírgula.
-                // Isso assume um formato "Rua, Bairro, Cidade".
                 const parts = item.user.address.split(',');
                 const bairro = parts[1] ? parts[1].trim() : 'Não informado';
                 acc[bairro] = (acc[bairro] || 0) + 1;
-                console.log(`Endereço: ${item.user.address}, Bairro extraído: ${bairro}`);
             } else {
                 const bairro = 'Não informado';
                 acc[bairro] = (acc[bairro] || 0) + 1;
             }
             return acc;
         }, {});
-        
-        const bairrosChart = Object.keys(bairros).map((key, index) => {
-            const colors = ['#4caf50', '#ffc107', '#00bcd4', '#e74c3c', '#9b59b6', '#3498db', '#2ecc71'];
+
+        const bairrosChart = Object.keys(bairros).map(key => {
+            // Se o bairro já tem uma cor, use-a. Se não, gere uma nova.
+            if (!bairroColors[key]) {
+                bairroColors[key] = generateRandomColor();
+            }
+
             return {
                 name: key,
                 population: bairros[key],
-                color: colors[index % colors.length],
+                color: bairroColors[key],
                 legendFontColor: '#7F7F7F',
                 legendFontSize: 12,
             };
@@ -144,7 +157,7 @@ export function HistoricoScreen() {
         }, {});
 
         const itensChart = Object.keys(itens).map((key, index) => {
-            const colors = ['#4caf50', '#ffc107', '#00bcd4', '#e74c3c', '#9b59b6', '#3498db', '#2ecc71'];
+            const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f1c40f', '#9b59b6', '#34495e', '#1abc9c'];
             return {
                 name: key,
                 population: itens[key],
@@ -157,48 +170,45 @@ export function HistoricoScreen() {
     };
 
     if (loading) {
-        return <ActivityIndicator size="large" color="#4caf50" style={styles.loading} />;
+        return <ActivityIndicator size="large" color="#3498db" style={styles.loading} />;
     }
 
     return (
         <ScrollView style={styles.container}>
+            <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+            >
+                <Icon name="arrow-back" size={24} color="#34495e" />
+            </TouchableOpacity>
+
             <Text style={styles.title}>Análise de Coletas</Text>
 
-            {/* Filtros de Data */}
             <View style={styles.filterContainer}>
                 <Text style={styles.filterTitle}>Filtrar por Data</Text>
                 <View style={styles.dateInputContainer}>
                     <TextInput
                         style={styles.dateInput}
-                        onChangeText={text => {
-                            setStartDate(text);
-                            // Aqui pode ser interessante resetar o filtro se uma das datas for alterada
-                            // setFilteredCollections(allCollections);
-                        }}
+                        onChangeText={setStartDate}
                         value={startDate}
                         placeholder="Data de Início (DD/MM/AAAA)"
                         keyboardType="default"
-                        placeholderTextColor="#999"
+                        placeholderTextColor="#95a5a6"
                     />
                     <TextInput
                         style={styles.dateInput}
-                        onChangeText={text => {
-                            setEndDate(text);
-                            // Aqui também, para manter a consistência
-                            // setFilteredCollections(allCollections);
-                        }}
+                        onChangeText={setEndDate}
                         value={endDate}
                         placeholder="Data de Fim (DD/MM/AAAA)"
                         keyboardType="default"
-                        placeholderTextColor="#999"
+                        placeholderTextColor="#95a5a6"
                     />
                 </View>
                 <TouchableOpacity onPress={handleFilterByDate} style={styles.filterButton}>
                     <Text style={styles.filterButtonText}>Aplicar Filtro</Text>
                 </TouchableOpacity>
             </View>
-            
-            {/* Gráfico de Bairros */}
+
             <View style={styles.chartCard}>
                 <Text style={styles.chartTitle}>Coletas por Bairro</Text>
                 {bairrosData.length > 0 ? (
@@ -222,7 +232,6 @@ export function HistoricoScreen() {
                 )}
             </View>
 
-            {/* Gráfico de Itens Mais Solicitados */}
             <View style={styles.chartCard}>
                 <Text style={styles.chartTitle}>Itens Mais Solicitados</Text>
                 {itensData.length > 0 ? (
@@ -252,23 +261,38 @@ export function HistoricoScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#f5f7fa',
         padding: 20,
+    },
+    backButton: {
+        position: 'absolute',
+        top: 30,
+        left: 20,
+        zIndex: 10,
+        backgroundColor: '#fff',
+        borderRadius: 20,
+        padding: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     loading: {
         flex: 1,
         justifyContent: 'center',
     },
     title: {
-        fontSize: 24,
+        fontSize: 28,
         fontWeight: 'bold',
-        marginBottom: 20,
-        color: '#333',
+        marginBottom: 25,
+        color: '#2c3e50',
         textAlign: 'center',
+        paddingTop: 40,
     },
     filterContainer: {
         backgroundColor: '#fff',
-        borderRadius: 10,
+        borderRadius: 12,
         padding: 15,
         marginBottom: 20,
         shadowColor: '#000',
@@ -281,41 +305,35 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 10,
-        color: '#333',
+        color: '#34495e',
         textAlign: 'center',
     },
     dateInputContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
+        justifyContent: 'space-between',
         marginBottom: 10,
     },
     dateInput: {
-        backgroundColor: '#f0f0f0',
-        padding: 10,
-        borderRadius: 8,
+        backgroundColor: '#f0f2f5',
+        padding: 12,
+        borderRadius: 10,
         flex: 1,
         marginHorizontal: 5,
-        alignItems: 'center',
         textAlign: 'center',
-        color: '#333',
-    },
-    dateButton: {
-        backgroundColor: '#f0f0f0',
-        padding: 10,
-        borderRadius: 8,
-        flex: 1,
-        marginHorizontal: 5,
-        alignItems: 'center',
-    },
-    dateButtonText: {
-        color: '#333',
+        color: '#2c3e50',
+        fontSize: 14,
     },
     filterButton: {
-        backgroundColor: '#4caf50',
+        backgroundColor: '#3498db',
         padding: 12,
-        borderRadius: 8,
+        borderRadius: 10,
         alignItems: 'center',
         marginTop: 15,
+        shadowColor: '#3498db',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+        elevation: 5,
     },
     filterButtonText: {
         color: '#fff',
@@ -324,56 +342,26 @@ const styles = StyleSheet.create({
     },
     chartCard: {
         backgroundColor: '#fff',
-        borderRadius: 10,
+        borderRadius: 12,
         padding: 10,
         marginBottom: 20,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        shadowRadius: 8,
+        elevation: 5,
     },
     chartTitle: {
         fontSize: 18,
-        fontWeight: 'bold',
+        fontWeight: '600',
         marginBottom: 10,
         textAlign: 'center',
+        color: '#34495e',
     },
     noDataText: {
         textAlign: 'center',
-        color: '#666',
+        color: '#95a5a6',
         marginTop: 20,
-    },
-    centeredView: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    },
-    modalView: {
-        margin: 20,
-        backgroundColor: 'white',
-        borderRadius: 20,
-        padding: 35,
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 5,
-        width: '90%',
-    },
-    closeButton: {
-        backgroundColor: '#e74c3c',
-        padding: 10,
-        borderRadius: 8,
-        marginTop: 15,
-    },
-    closeButtonText: {
-        color: 'white',
-        fontWeight: 'bold',
+        paddingBottom: 20,
     },
 });

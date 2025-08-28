@@ -1,12 +1,11 @@
 import CollectService from "@/service/CollectService";
 import { RootStackParamList } from "@/types/navigation";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
-  Button,
   Dimensions,
   Modal,
   ScrollView,
@@ -18,495 +17,443 @@ import {
 import { PieChart } from "react-native-chart-kit";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
-type DashboardNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  "Dashboard"
->;
+type DashboardNavigationProp = NativeStackNavigationProp<RootStackParamList, "Dashboard">;
 
 const screenWidth = Dimensions.get("window").width;
 
 interface PieChartDataItem {
-  name: string;
-  population: number;
-  color: string;
-  legendFontColor: string;
-  legendFontSize: number;
+    name: string;
+    population: number;
+    color: string;
+    legendFontColor: string;
+    legendFontSize: number;
 }
 
 const Dashboard = () => {
-  // Estado dos modais
-  const [isInfoVisible, setIsInfoVisible] = useState(false);
-  const [isStatusModalVisible, setIsStatusModalVisible] = useState(false);
+    const navigation = useNavigation<DashboardNavigationProp>();
 
-  // Estado status da coleta
-  const [loadingStatus, setLoadingStatus] = useState(false);
-  const [collectStatus, setCollectStatus] = useState<string | null>(null);
+    // Estados
+    const [isInfoVisible, setIsInfoVisible] = useState(false);
+    const [isStatusModalVisible, setIsStatusModalVisible] = useState(false);
+    const [loadingStatus, setLoadingStatus] = useState(false);
+    const [collectStatus, setCollectStatus] = useState<string | null>(null);
+    const [loadingGraph, setLoadingGraph] = useState(false);
+    const [wasteTypeData, setWasteTypeData] = useState<PieChartDataItem[]>([]);
+    const [userName, setUserName] = useState("");
+    const [userId, setUserId] = useState<string | null>(null);
 
-  // Estado do gráfico
-  const [loadingGraph, setLoadingGraph] = useState(false);
-  const [wasteTypeData, setWasteTypeData] = useState<PieChartDataItem[]>([]);
+    // Lógica para carregar o nome do usuário e os dados do gráfico
+    useFocusEffect(
+        useCallback(() => {
+            const loadData = async () => {
+                const id = await AsyncStorage.getItem("userId");
+                const name = await AsyncStorage.getItem("userName");
 
-  const navigation = useNavigation<DashboardNavigationProp>();
-  const [userName, setUserName] = useState("");
-  const [userId, setUserId] = useState<string | null>(null);
+                if (id) {
+                    setUserId(id);
+                    setUserName(name || "Usuário"); // Garante que o nome não seja nulo
+                    fetchWasteTypeDistribution(id);
+                }
+            };
+            loadData();
+        }, [])
+    );
 
-  // useEffect para buscar o ID do usuário e, em seguida, buscar os dados
-  useEffect(() => {
-    const getUserIdAndFetchData = async () => {
-      // Obtém o userId de forma assíncrona
-      const id = await AsyncStorage.getItem("userId");
-      setUserId(id);
-
-      if (id) {
-        // Busca o nome do usuário armazenado localmente
-        const name = await AsyncStorage.getItem("userName");
-        if (name) setUserName(name);
-
-        // AQUI: Chama a função que busca dados do gráfico, passando o ID do usuário
-        fetchWasteTypeDistribution(id);
-      }
+    // Função para buscar status da coleta
+    const fetchCollectStatus = async () => {
+        setLoadingStatus(true);
+        setCollectStatus(null);
+        try {
+            const response = await CollectService.getLatestCollectStatus();
+            if (response && response.collected !== undefined) {
+                const statusText = response.collected
+                    ? "Coleta Confirmada!"
+                    : "Aguardando Confirmação!";
+                setCollectStatus(statusText);
+            } else {
+                setCollectStatus("Nenhuma coleta encontrada.");
+            }
+        } catch (error) {
+            console.error("Erro ao buscar status da coleta:", error);
+            setCollectStatus("Erro ao buscar status. Tente novamente.");
+        } finally {
+            setLoadingStatus(false);
+        }
     };
 
-    getUserIdAndFetchData();
-  }, []); // Array de dependências vazio, roda apenas uma vez ao montar o componente
+    // Esta função agora usa o userId para filtrar os dados (se o serviço suportar)
+    const fetchWasteTypeDistribution = async (id: string) => {
+        setLoadingGraph(true);
+        try {
+            const items = await CollectService.getTotalCollectedInMonth(); // Passando o ID do usuário
 
-  // Função para buscar status da coleta
-  const fetchCollectStatus = async () => {
-    setLoadingStatus(true);
-    setCollectStatus(null);
-    try {
-      const response = await CollectService.getLatestCollectStatus();
-      if (response && response.collected !== undefined) {
-        const statusText = response.collected
-          ? "Coleta Confirmada!"
-          : "Aguardando Confirmação!";
-        setCollectStatus(statusText);
-      } else {
-        setCollectStatus("Nenhuma coleta encontrada.");
-      }
-    } catch (error) {
-      console.error("Erro ao buscar status da coleta:", error);
-      setCollectStatus("Erro ao buscar status. Tente novamente.");
-    } finally {
-      setLoadingStatus(false);
-    }
-  };
+            const colors = [
+                "#3498db", // Azul
+                "#2ecc71", // Verde
+                "#f1c40f", // Amarelo
+                "#e74c3c", // Vermelho
+                "#9b59b6", // Roxo
+                "#1abc9c", // Ciano
+            ];
+            const chartData: PieChartDataItem[] = items.map((item, index) => ({
+                name: item.itemName,
+                population: item.totalQuantity,
+                color: colors[index % colors.length],
+                legendFontColor: "#7F7F7F",
+                legendFontSize: 12,
+            }));
 
-  // Esta função agora recebe o ID do usuário como parâmetro
-  const fetchWasteTypeDistribution = async (id: string) => {
-    setLoadingGraph(true);
-    try {
-      // AQUI: A função do serviço recebe o ID para filtrar os dados
-      const items = await CollectService.getTotalCollectedInMonth();
+            setWasteTypeData(chartData);
+        } catch (error) {
+            console.error("Erro ao buscar itens coletados para gráfico:", error);
+            setWasteTypeData([]);
+        } finally {
+            setLoadingGraph(false);
+        }
+    };
 
-      const colors = [
-        "#00BCD4",
-        "#FFC107",
-        "#2196F3",
-        "#4CAF50",
-        "#9C27B0",
-        "#F44336",
-      ];
-      const chartData: PieChartDataItem[] = items.map((item, index) => ({
-        name: item.itemName,
-        population: item.totalQuantity,
-        color: colors[index % colors.length],
-        legendFontColor: "#7F7F7F",
-        legendFontSize: 12,
-      }));
+    const openStatusModal = () => {
+        setIsStatusModalVisible(true);
+        fetchCollectStatus();
+    };
 
-      setWasteTypeData(chartData);
-    } catch (error) {
-      console.error("Erro ao buscar itens coletados para gráfico:", error);
-      setWasteTypeData([]);
-    } finally {
-      setLoadingGraph(false);
-    }
-  };
+    const chartConfig = {
+        backgroundColor: "#f5f7fa",
+        backgroundGradientFrom: "#f5f7fa",
+        backgroundGradientTo: "#f5f7fa",
+        color: (opacity = 1) => `rgba(44, 62, 80, ${opacity})`,
+        // Adicione esta linha para garantir que o gráfico se ajuste corretamente
+        paddingRight: 0,
+    };
 
-  const openStatusModal = () => {
-    setIsStatusModalVisible(true);
-    fetchCollectStatus();
-  };
-
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Icon name="leaf" size={30} color="#2E7D32" />
-        <Text style={styles.title}>RECiclo</Text>
-      </View>
-
-      {/* Informações do usuário */}
-      <View style={styles.userInfo}>
-        <Icon name="home" size={30} color="#555" />
-        <Text style={styles.user}>Bem-vindo, {userName}!</Text>
-        <TouchableOpacity
-          onPress={() => navigation.navigate("Configuracoes")}
-          style={{ padding: 10, backgroundColor: "#ffffffff", borderRadius: 5 }}
-        >
-          <Icon name="cog" size={20} color="#555" />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: "#00BCD4" }]}
-          onPress={() => navigation.navigate("SolicitaColeta")}
-        >
-          <Icon name="delete" size={24} color="#fff" />
-          <Text style={styles.buttonText}>
-            Solicitar{"\n"}Coleta
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: "#C8E6C9" }]}
-          onPress={openStatusModal}
-        >
-          <Icon name="clock-outline" size={24} color="#2E7D32" />
-          <Text style={[styles.buttonText, { color: "#2E7D32" }]}>
-            Ver Status{"\n"}da Solicitação
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: "#2196F3" }]}
-          onPress={() => setIsInfoVisible(true)}
-        >
-          <Icon name="recycle" size={24} color="#fff" />
-          <Text style={styles.buttonText}>
-            Informações{"\n"}sobre Reciclagem
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: "#388E3C" }]}
-          onPress={() => console.log("Participar do Jardim Comunitário")}
-        >
-          <Icon name="sprout" size={24} color="#fff" />
-          <Text style={styles.buttonText}>
-            Participar do{"\n"}Jardim Comunitário
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Gráfico de pizza com a distribuição dos resíduos */}
-      <View style={styles.graphContainer}>
-        <Text style={styles.graphTitle}>
-          Distribuição dos Resíduos Coletados
-        </Text>
-        {loadingGraph ? (
-          <ActivityIndicator size="large" color="#30B7B0" />
-        ) : wasteTypeData.length > 0 ? (
-          <PieChart
-            data={wasteTypeData}
-            width={screenWidth - 40}
-            height={220}
-            chartConfig={{
-              backgroundColor: "#fff",
-              backgroundGradientFrom: "#fff",
-              backgroundGradientTo: "#fff",
-              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-              paddingRight: screenWidth * 0.25,
-            }}
-            accessor="population"
-            backgroundColor="transparent"
-            paddingLeft="15"
-            
-          />
-        ) : (
-          <Text style={styles.noDataText}>
-            Nenhum dado de coleta neste mês.
-          </Text>
-        )}
-      </View>
-
-      {/* Modal - Guia de Reciclagem */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={isInfoVisible}
-        onRequestClose={() => setIsInfoVisible(false)}
-      >
-        <View style={styles.modalBackground}>
-          <View style={styles.modalContentEnfeitado}>
-            <View style={styles.modalHeader}>
-              <Icon
-                name="information-circle-outline"
-                size={30}
-                color="#2196F3"
-              />
-              <Text style={styles.modalTitleEnfeitado}>Guia de Reciclagem</Text>
+    return (
+        <ScrollView contentContainerStyle={styles.container}>
+            {/* Header */}
+            <View style={styles.header}>
+                <Icon name="leaf" size={40} color="#2E7D32" />
+                <Text style={styles.title}>RECiclo</Text>
             </View>
-            <ScrollView style={styles.modalScrollView}>
-              <View style={styles.modalSection}>
-                <Icon
-                  name="leaf"
-                  size={20}
-                  color="#388E3C"
-                  style={styles.sectionIcon}
-                />
-                <Text style={styles.sectionTitle}>Por Que Reciclar?</Text>
-                <Text style={styles.modalTextEnfeitado}>
-                  Reciclar é vital para nosso planeta, pois reduz a quantidade
-                  de lixo em aterros, economiza energia, conserva recursos
-                  naturais e gera empregos.
-                </Text>
-              </View>
 
-              <View style={styles.modalSection}>
-                <Icon
-                  name="package-variant-closed"
-                  size={20}
-                  color="#00BCD4"
-                  style={styles.sectionIcon}
-                />
-                <Text style={styles.sectionTitle}>Como Diferenciar?</Text>
-                <Text style={styles.modalTextEnfeitado}>
-                  • <Text style={{ fontWeight: "bold" }}>Papel:</Text> Jornais,
-                  revistas, caixas de papelão limpas. Evite papel higiênico,
-                  fotos.
-                  {"\n"}• <Text style={{ fontWeight: "bold" }}>Plástico:</Text>{" "}
-                  Garrafas PET, embalagens de produtos. Evite isopor em algumas
-                  regiões.
-                  {"\n"}• <Text style={{ fontWeight: "bold" }}>Vidro:</Text>{" "}
-                  Garrafas, potes de alimentos. Evite espelhos, louças,
-                  lâmpadas.
-                  {"\n"}• <Text style={{ fontWeight: "bold" }}>Metal:</Text>{" "}
-                  Latas de alumínio, panelas velhas. Evite pilhas, baterias,
-                  eletrônicos.
-                  {"\n"}• <Text style={{ fontWeight: "bold" }}>Orgânico:</Text>{" "}
-                  Restos de alimentos, borra de café. Evite carnes e laticínios
-                  em compostagem doméstica.
-                </Text>
-              </View>
-
-              <View style={styles.modalSection}>
-                <Icon
-                  name="check-circle-outline"
-                  size={20}
-                  color="#4CAF50"
-                  style={styles.sectionIcon}
-                />
-                <Text style={styles.sectionTitle}>Modo de Separar</Text>
-                <Text style={styles.modalTextEnfeitado}>
-                  1.{" "}
-                  <Text style={{ fontWeight: "bold" }}>Separe por tipo:</Text>{" "}
-                  Tenha lixeiras para cada categoria (papel, plástico, vidro,
-                  metal, orgânico).
-                  {"\n"}2.{" "}
-                  <Text style={{ fontWeight: "bold" }}>Limpe e Seque:</Text>{" "}
-                  Lave embalagens plásticas e de vidro. Papel e papelão devem
-                  estar secos.
-                  {"\n"}3.{" "}
-                  <Text style={{ fontWeight: "bold" }}>Amasse e Compacte:</Text>
-                  Reduza o volume de latas e garrafas para economizar espaço.
-                  {"\n"}4.{" "}
-                  <Text style={{ fontWeight: "bold" }}>
-                    Cuidado com o Vidro:
-                  </Text>{" "}
-                  Embale vidros quebrados em jornais ou caixas para segurança.
-                  {"\n"}5.{" "}
-                  <Text style={{ fontWeight: "bold" }}>
-                    Descarte o Orgânico Separadamente:
-                  </Text>{" "}
-                  Nunca misture com recicláveis secos.
-                  {"\n"}6.{" "}
-                  <Text style={{ fontWeight: "bold" }}>Ponto de Coleta:</Text>{" "}
-                  Verifique a coleta seletiva da sua região ou leve a um PEV.
-                </Text>
-              </View>
-            </ScrollView>
-            <Button title="Entendi" onPress={() => setIsInfoVisible(false)} />
-          </View>
-        </View>
-      </Modal>
-
-      {/* Modal - Status da Coleta */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={isStatusModalVisible}
-        onRequestClose={() => {
-          setIsStatusModalVisible(false);
-          setCollectStatus(null);
-        }}
-      >
-        <View style={styles.modalBackground}>
-          <View style={styles.modalContentEnfeitado}>
-            <View style={styles.modalHeader}>
-              <Icon name="information-outline" size={30} color="#C8E6C9" />
-              <Text style={[styles.modalTitleEnfeitado, { color: "#2E7D32" }]}>
-                Status da Coleta
-              </Text>
+            {/* Informações do usuário */}
+            <View style={styles.userInfo}>
+                <Text style={styles.user}>Bem-vindo, {userName}!</Text>
+                <TouchableOpacity
+                    onPress={() => navigation.navigate("Configuracoes")}
+                    style={styles.settingsButton}
+                >
+                    <Icon name="cog" size={24} color="#34495e" />
+                </TouchableOpacity>
             </View>
-            <View style={{ alignItems: "center", paddingVertical: 20 }}>
-              <Icon name="truck-delivery-outline" size={50} color="#30B7B0" />
-              {loadingStatus ? (
-                <ActivityIndicator size="large" color="#30B7B0" />
-              ) : (
-                <>
-                  <Text
-                    style={{ fontSize: 16, marginTop: 10, fontWeight: "bold" }}
-                  >
-                    Sua coleta está
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 18,
-                      fontWeight: "bold",
-                      color: "#30B7B0",
-                      textAlign: "center",
-                    }}
-                  >
-                    {collectStatus}
-                  </Text>
-                  <Text
-                    style={{
-                      marginTop: 10,
-                      textAlign: "center",
-                      color: "#777",
-                    }}
-                  >
-                    {collectStatus === "Aguardando Confirmação!"
-                      ? "Você receberá uma notificação quando a coleta for confirmada."
-                      : ""}
-                  </Text>
-                </>
-              )}
+
+            {/* Container de botões */}
+            <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                    style={[styles.button, styles.collectButton]}
+                    onPress={() => navigation.navigate("SolicitaColeta")}
+                >
+                    <Icon name="truck-plus" size={30} color="#fff" />
+                    <Text style={styles.buttonText}>
+                        Solicitar{"\n"}Coleta
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[styles.button, styles.statusButton]}
+                    onPress={openStatusModal}
+                >
+                    <Icon name="truck-fast" size={30} color="#fff" />
+                    <Text style={styles.buttonText}>
+                        Ver Status{"\n"}da Coleta
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[styles.button, styles.infoButton]}
+                    onPress={() => setIsInfoVisible(true)}
+                >
+                    <Icon name="information-outline" size={30} color="#fff" />
+                    <Text style={styles.buttonText}>
+                        Guia de{"\n"}Reciclagem
+                    </Text>
+                </TouchableOpacity>
             </View>
-            <Button
-              title="Fechar"
-              onPress={() => setIsStatusModalVisible(false)}
-            />
-          </View>
-        </View>
-      </Modal>
-    </ScrollView>
-  );
+
+            {/* Gráfico de pizza com a distribuição dos resíduos */}
+            <View style={styles.graphCard}>
+                <Text style={styles.graphTitle}>
+                    Resíduos Coletados (Últimos 30 dias)
+                </Text>
+                {loadingGraph ? (
+                    <ActivityIndicator size="large" color="#2ecc71" style={styles.loadingGraph} />
+                ) : wasteTypeData.length > 0 ? (
+                    <PieChart
+                        data={wasteTypeData}
+                        width={screenWidth - 40}
+                        height={220}
+                        chartConfig={chartConfig}
+                        accessor="population"
+                        backgroundColor="transparent"
+                        paddingLeft="15"
+                        absolute
+                    />
+                ) : (
+                    <Text style={styles.noDataText}>
+                        Nenhum dado de coleta disponível no momento.
+                    </Text>
+                )}
+            </View>
+
+            {/* Modal - Guia de Reciclagem */}
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={isInfoVisible}
+                onRequestClose={() => setIsInfoVisible(false)}
+            >
+                <View style={styles.modalBackground}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Guia de Reciclagem</Text>
+                            <TouchableOpacity onPress={() => setIsInfoVisible(false)}>
+                                <Icon name="close-circle-outline" size={24} color="#e74c3c" />
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView style={styles.modalScrollView}>
+                            <View style={styles.modalSection}>
+                                <Text style={styles.sectionTitle}>
+                                    <Icon name="lightbulb-on-outline" size={18} color="#f1c40f" /> Por que Reciclar?
+                                </Text>
+                                <Text style={styles.modalText}>
+                                    Reciclar é essencial para o meio ambiente! Ajuda a diminuir a quantidade de lixo em aterros sanitários, economiza energia e água, e preserva os recursos naturais do nosso planeta.
+                                </Text>
+                            </View>
+                            <View style={styles.modalSection}>
+                                <Text style={styles.sectionTitle}>
+                                    <Icon name="bottle-tonic-plus-outline" size={18} color="#3498db" /> Como Separar?
+                                </Text>
+                                <Text style={styles.modalText}>
+                                    - **Plástico**: Garrafas, tampinhas, embalagens de produtos de limpeza.
+                                    {"\n"}- **Metal**: Latas de alumínio e aço, tampas de potes, arames.
+                                    {"\n"}- **Papel**: Jornais, revistas, caixas de papelão.
+                                    {"\n"}- **Vidro**: Garrafas de bebidas, potes de alimentos.
+                                </Text>
+                            </View>
+                            <View style={styles.modalSection}>
+                                <Text style={styles.sectionTitle}>
+                                    <Icon name="check-circle-outline" size={18} color="#2ecc71" /> Dicas Importantes
+                                </Text>
+                                <Text style={styles.modalText}>
+                                    - Limpe e seque as embalagens antes de descartar.
+                                    {"\n"}- Amasse garrafas plásticas e latas para economizar espaço.
+                                    {"\n"}- Separe os resíduos por tipo em sacos ou recipientes diferentes.
+                                </Text>
+                            </View>
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Modal - Status da Coleta */}
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={isStatusModalVisible}
+                onRequestClose={() => setIsStatusModalVisible(false)}
+            >
+                <View style={styles.modalBackground}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Status da Coleta</Text>
+                            <TouchableOpacity onPress={() => setIsStatusModalVisible(false)}>
+                                <Icon name="close-circle-outline" size={24} color="#e74c3c" />
+                            </TouchableOpacity>
+                        </View>
+                        <View style={styles.statusModalBody}>
+                            <Icon name="truck-fast-outline" size={50} color="#3498db" />
+                            {loadingStatus ? (
+                                <ActivityIndicator size="large" color="#3498db" style={{ marginTop: 20 }} />
+                            ) : (
+                                <>
+                                    <Text style={styles.statusText}>Sua coleta mais recente:</Text>
+                                    <Text style={styles.statusMessage}>{collectStatus}</Text>
+                                    {collectStatus === "Aguardando Confirmação!" && (
+                                        <Text style={styles.statusSubtitle}>Você receberá uma notificação quando a coleta for confirmada.</Text>
+                                    )}
+                                </>
+                            )}
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+        </ScrollView>
+    );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    padding: 20,
-    backgroundColor: "#fff",
-    alignItems: "center",
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#2E7D32",
-  },
-  userInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  user: {
-    color: "#555",
-    marginLeft: 5,
-    fontSize: 16,
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    justifyContent: "center",
-    marginBottom: 20,
-  },
-  button: {
-    width: 150,
-    height: 80,
-    borderRadius: 10,
-    padding: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  buttonText: {
-    color: "#fff",
-    textAlign: "center",
-    marginTop: 5,
-    fontSize: 13,
-  },
-  graphContainer: {
-    marginTop: 20,
-    alignItems: "center",
-    width: "100%",
-  },
-  graphTitle: {
-    fontSize: 16,
-    marginBottom: 10,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  noDataText: {
-    textAlign: "center",
-    color: "#666",
-    marginTop: 20,
-  },
-  modalBackground: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  modalContentEnfeitado: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 15,
-    alignItems: "center",
-    elevation: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    width: "85%",
-    maxWidth: 450,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  modalTitleEnfeitado: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginLeft: 10,
-  },
-  modalScrollView: {
-    maxHeight: 300,
-    marginBottom: 15,
-    width: "100%",
-  },
-  modalSection: {
-    marginBottom: 15,
-    paddingHorizontal: 10,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 5,
-    color: "#333",
-  },
-  sectionIcon: {
-    marginRight: 5,
-  },
-  modalTextEnfeitado: {
-    fontSize: 14,
-    color: "#555",
-    textAlign: "left",
-  },
+    container: {
+        flexGrow: 1,
+        paddingTop: 50,
+        paddingHorizontal: 20,
+        backgroundColor: "#f5f7fa",
+    },
+    header: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 20,
+    },
+    title: {
+        fontSize: 28,
+        fontWeight: "bold",
+        color: "#2ecc71",
+        marginLeft: 10,
+    },
+    userInfo: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        width: "100%",
+        paddingHorizontal: 10,
+        marginBottom: 25,
+    },
+    user: {
+        fontSize: 18,
+        fontWeight: "bold",
+        color: "#2c3e50",
+    },
+    settingsButton: {
+        padding: 8,
+        backgroundColor: "#ecf0f1",
+        borderRadius: 20,
+    },
+    buttonContainer: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "space-between",
+        marginBottom: 20,
+    },
+    button: {
+        width: "48%",
+        height: 120,
+        borderRadius: 15,
+        justifyContent: "center",
+        alignItems: "center",
+        marginBottom: 15,
+        elevation: 5,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+    },
+    collectButton: { backgroundColor: "#3498db" },
+    statusButton: { backgroundColor: "#2ecc71" },
+    infoButton: { backgroundColor: "#9b59b6" },
+    historyButton: { backgroundColor: "#f1c40f" },
+    buttonText: {
+        color: "#fff",
+        textAlign: "center",
+        marginTop: 10,
+        fontSize: 14,
+        fontWeight: "bold",
+    },
+    graphCard: {
+        backgroundColor: "#fff",
+        borderRadius: 15,
+        padding: 15,
+        alignItems: "center",
+        elevation: 5,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+    },
+    graphTitle: {
+        fontSize: 16,
+        fontWeight: "bold",
+        marginBottom: 10,
+        color: "#34495e",
+        textAlign: "center",
+    },
+    loadingGraph: {
+        padding: 20,
+    },
+    noDataText: {
+        textAlign: "center",
+        color: "#95a5a6",
+        marginTop: 20,
+    },
+    modalBackground: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "rgba(0, 0, 0, 0.6)",
+    },
+    modalContent: {
+        backgroundColor: "#fff",
+        padding: 25,
+        borderRadius: 15,
+        width: "90%",
+        elevation: 10,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+    },
+    modalHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: "#ecf0f1",
+        paddingBottom: 10,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: "bold",
+        color: "#2c3e50",
+    },
+    modalScrollView: {
+        maxHeight: Dimensions.get("window").height * 0.5,
+    },
+    modalSection: {
+        marginBottom: 15,
+    },
+    sectionTitle: {
+        fontSize: 16,
+        fontWeight: "bold",
+        marginBottom: 5,
+        color: "#34495e",
+    },
+    modalText: {
+        fontSize: 14,
+        color: "#555",
+        lineHeight: 20,
+    },
+    statusModalBody: {
+        alignItems: "center",
+        paddingVertical: 20,
+    },
+    statusText: {
+        fontSize: 16,
+        marginTop: 15,
+        fontWeight: "bold",
+        color: "#34495e",
+    },
+    statusMessage: {
+        fontSize: 20,
+        fontWeight: "bold",
+        color: "#2ecc71",
+        textAlign: "center",
+        marginTop: 5,
+    },
+    statusSubtitle: {
+        marginTop: 10,
+        textAlign: "center",
+        color: "#7f8c8d",
+        fontSize: 12,
+        fontStyle: "italic",
+    },
 });
 
 export default Dashboard;
