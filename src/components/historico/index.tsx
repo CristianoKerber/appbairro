@@ -22,13 +22,42 @@ interface CollectionRequest {
 
 type HistoricoScreenNavigationProp = NativeStackNavigationProp<any, "HistoricoScreen">;
 
-// Objeto para armazenar as cores geradas para cada bairro
 const bairroColors: Record<string, string> = {};
 
-// Função para gerar uma cor hexadecimal aleatória
 const generateRandomColor = () => {
     const randomColor = Math.floor(Math.random() * 16777215).toString(16);
     return `#${randomColor.padStart(6, '0')}`;
+};
+
+// **Função de extração de bairro revisada**
+const extractBairro = (address: string | undefined): string => {
+    if (!address) {
+        return 'Não informado';
+    }
+
+    const parts = address.split(',').map(part => part.trim());
+
+    // Se a segunda parte existe e não é um número
+    if (parts.length > 1 && !/^\d+$/.test(parts[1])) {
+        return parts[1];
+    }
+
+    // Se a primeira parte não for um número (um caso de endereço simples)
+    if (parts.length > 0 && !/^\d+$/.test(parts[0])) {
+        // Verifica se a primeira parte não é um nome de rua óbvio
+        if (!parts[0].toLowerCase().startsWith('rua ')) {
+            return parts[0];
+        }
+    }
+    
+    // Procura por um padrão "Bairro: [nome]"
+    const bairroRegex = /bairro\s*:\s*(.+)/i;
+    const match = address.match(bairroRegex);
+    if (match && match[1]) {
+        return match[1].split(',')[0].trim();
+    }
+
+    return 'Não informado';
 };
 
 export function HistoricoScreen() {
@@ -40,14 +69,14 @@ export function HistoricoScreen() {
     const [endDate, setEndDate] = useState('');
     const [bairrosData, setBairrosData] = useState<{
         name: string;
-        population: number;
+        population: number; // Mudei de "address" para "population"
         color: string;
         legendFontColor: string;
         legendFontSize: number;
     }[]>([]);
     const [itensData, setItensData] = useState<{
         name: string;
-        population: number;
+        population: number; // Mudei de "address" para "population"
         color: string;
         legendFontColor: string;
         legendFontSize: number;
@@ -67,7 +96,7 @@ export function HistoricoScreen() {
                 }
 
                 setAllCollections(data);
-                setFilteredCollections(data); // Inicialmente mostra todos
+                setFilteredCollections(data);
             } catch (error) {
                 Alert.alert('Erro', 'Não foi possível carregar os dados de histórico.');
                 console.error('Erro ao buscar dados:', error);
@@ -109,7 +138,6 @@ export function HistoricoScreen() {
         const filtered = allCollections.filter(item => {
             const [year, month, day] = item.collectDate.split('-').map(Number);
             const itemDate = new Date(year, month - 1, day, 0, 0, 0);
-
             return itemDate >= start && itemDate <= end;
         });
 
@@ -121,25 +149,16 @@ export function HistoricoScreen() {
     };
 
     const processData = (data: CollectionRequest[]) => {
-        // Lógica para contar requisições por bairro
         const bairros = data.reduce<Record<string, number>>((acc, item) => {
-            if (item.user?.address) {
-                const parts = item.user.address.split(',');
-                const bairro = parts[1] ? parts[1].trim() : 'Não informado';
-                acc[bairro] = (acc[bairro] || 0) + 1;
-            } else {
-                const bairro = 'Não informado';
-                acc[bairro] = (acc[bairro] || 0) + 1;
-            }
+            const bairro = extractBairro(item.user?.address);
+            acc[bairro] = (acc[bairro] || 0) + 1;
             return acc;
         }, {});
 
         const bairrosChart = Object.keys(bairros).map(key => {
-            // Se o bairro já tem uma cor, use-a. Se não, gere uma nova.
             if (!bairroColors[key]) {
                 bairroColors[key] = generateRandomColor();
             }
-
             return {
                 name: key,
                 population: bairros[key],
@@ -150,7 +169,6 @@ export function HistoricoScreen() {
         });
         setBairrosData(bairrosChart);
 
-        // Lógica para contar itens mais solicitados
         const itens = data.reduce<Record<string, number>>((acc, item) => {
             acc[item.itemName] = (acc[item.itemName] || 0) + item.quantity;
             return acc;
@@ -302,10 +320,10 @@ const styles = StyleSheet.create({
         elevation: 3,
     },
     filterTitle: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'bold',
-        marginBottom: 10,
         color: '#34495e',
+        marginBottom: 10,
         textAlign: 'center',
     },
     dateInputContainer: {

@@ -4,13 +4,13 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Dimensions,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Dimensions,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { PieChart } from "react-native-chart-kit";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
@@ -49,32 +49,27 @@ export function AdminDashboard() {
         const fetchAllCollections = async () => {
             try {
                 setLoading(true);
-
                 const apiData: ApiDataItem[] = await CollectService.getAllCollects();
-
-                // Agrupa os dados por itemName e soma as quantidades
                 const groupedData: { [key: string]: number } = apiData.reduce((acc, item) => {
                     const quantity = typeof item.quantity === 'number' && !isNaN(item.quantity) ? item.quantity : 0;
                     acc[item.itemName] = (acc[item.itemName] || 0) + quantity;
                     return acc;
                 }, {} as { [key: string]: number });
 
-                // Paleta de cores fixa para consistência
                 const colors = [
-                    "#3498db", // Azul
-                    "#2ecc71", // Verde
-                    "#f1c40f", // Amarelo
-                    "#e74c3c", // Vermelho
-                    "#9b59b6", // Roxo
-                    "#1abc9c", // Ciano
+                    "#3498db",
+                    "#2ecc71",
+                    "#f1c40f",
+                    "#e74c3c",
+                    "#9b59b6",
+                    "#1abc9c",
                 ];
 
-                // Formata os dados agrupados para o formato esperado pelo PieChart
                 const formattedData: ChartDataItem[] = Object.keys(groupedData).map((key, index) => {
                     return {
                         name: key,
                         population: groupedData[key],
-                        color: colors[index % colors.length], // Usa a paleta de cores
+                        color: colors[index % colors.length],
                         legendFontColor: "#7F7F7F",
                         legendFontSize: 15,
                     };
@@ -102,15 +97,12 @@ export function AdminDashboard() {
         backgroundGradientTo: "#fff",
         color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
         decimalPlaces: 0,
-        // Garante que o gráfico se ajuste corretamente
-        paddingRight: 0, 
     };
 
     return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
             <View style={styles.container}>
                 <Text style={styles.header}>Reciclo Admin</Text>
-
                 {errorMessage ? (
                     <View style={styles.errorBox}>
                         <Text style={styles.errorText}>{errorMessage}</Text>
@@ -122,7 +114,6 @@ export function AdminDashboard() {
                         </TouchableOpacity>
                     </View>
                 ) : null}
-
                 <View style={isMobile ? styles.contentMobile : styles.contentDesktop}>
                     <View style={styles.menuContainer}>
                         <TouchableOpacity
@@ -132,7 +123,6 @@ export function AdminDashboard() {
                             <Icon name="truck-fast" size={24} color="#fff" />
                             <Text style={styles.buttonText}>Coletas</Text>
                         </TouchableOpacity>
-
                         <TouchableOpacity
                             style={styles.menuButton}
                             onPress={() => navigation.navigate("UsersScreen")}
@@ -140,7 +130,6 @@ export function AdminDashboard() {
                             <Icon name="account-group" size={24} color="#fff" />
                             <Text style={styles.buttonText}>Usuários</Text>
                         </TouchableOpacity>
-
                         <TouchableOpacity
                             style={styles.menuButton}
                             onPress={() => navigation.navigate("HistoricoScreen")}
@@ -148,8 +137,14 @@ export function AdminDashboard() {
                             <Icon name="history" size={24} color="#fff" />
                             <Text style={styles.buttonText}>Histórico</Text>
                         </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.buttonExit}
+                            onPress={() => navigation.replace("LoginScreen")}
+                        >
+                            <Icon name="logout" size={24} color="#fff" />
+                            <Text style={styles.buttonText}>Sair</Text>
+                        </TouchableOpacity>
                     </View>
-
                     <View style={styles.chartContainer}>
                         <Text style={styles.chartTitle}>Resíduos Coletados</Text>
                         {loading ? (
@@ -175,16 +170,25 @@ export function AdminDashboard() {
     );
 }
 
-// Estilos do componente
 const styles = StyleSheet.create({
+    buttonExit: {
+        backgroundColor: "#e74c3c",
+        padding: 15,
+        borderRadius: 8,
+        marginBottom: 10,
+        alignItems: "center",
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 10
+    },
     scrollContainer: {
         flexGrow: 1,
         backgroundColor: "#f0f2f5",
+        padding: 20,
     },
     container: {
         flex: 1,
-        padding: 20,
-        paddingTop: 50,
+        paddingTop: 30,
     },
     header: {
         fontSize: 32,
