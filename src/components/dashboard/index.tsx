@@ -5,14 +5,14 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
-  Dimensions,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Dimensions,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { PieChart } from "react-native-chart-kit";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
@@ -176,8 +176,6 @@ const Dashboard = () => {
                         Guia de{"\n"}Reciclagem
                     </Text>
                 </TouchableOpacity>
-            </View>
-
             {/* Gráfico de pizza com a distribuição dos resíduos */}
             <View style={styles.graphCard}>
                 <Text style={styles.graphTitle}>
@@ -202,8 +200,9 @@ const Dashboard = () => {
                     </Text>
                 )}
             </View>
+            </View>
 
-            {/* Modal - Guia de Reciclagem */}
+
             <Modal
                 animationType="fade"
                 transparent={true}
@@ -366,6 +365,10 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
         shadowRadius: 6,
+        marginBottom: 30,
+        width: "100%",
+        minHeight: 300,
+        justifyContent: "center",
     },
     graphTitle: {
         fontSize: 16,

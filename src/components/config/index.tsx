@@ -52,7 +52,7 @@ export function Configuracao() {
                     if (user.address) {
                         const parts = user.address.split(',');
                         if (parts.length >= 4) {
-                            setUserCep(''); // O CEP não é salvo na string de endereço, então não podemos recuperá-lo aqui.
+                            setUserCep(''); 
                             setLogradouro(parts[0]?.trim() || '');
                             setNumero(parts[1]?.trim() || '');
                             setBairro(parts[2]?.trim() || '');
