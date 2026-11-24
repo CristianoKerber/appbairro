@@ -29,9 +29,10 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     // Credenciais de admin fixas
-    const adminEmail = "jeanvictor@admin.com";
-    const adminPassword = "admin@123";
-    setErrorMessage(""); 
+    const adminEmail = "admin@admin";
+    const adminPassword = "123";
+    setErrorMessage("");
+    console.log("tentativa:", JSON.stringify(email), JSON.stringify(password));
 
     if (email.trim() === adminEmail && password === adminPassword) {
       console.log("Login de Admin bem-sucedido."); 
